@@ -59,10 +59,39 @@ modifiables via `/config` sans toucher au code.
    base de donnees en V1. `src/store/prospectStore.js` isole cette decision :
    migrer vers SQLite/Postgres/Notion plus tard ne touche aucun moteur.
 
-8. **CLI minimale plutot qu'interface graphique.** Le brief ne demande pas
-   d'UI pour la V1 ("le cerveau du systeme"). Une CLI (`src/cli.js`) suffit
-   pour piloter add/analyze/list/top/show ; une interface (web, Notion, etc.)
-   est un sujet V2 explicitement hors-perimetre (section 23).
+8. **CLI minimale plutot qu'interface graphique (V1 du moteur).** Le brief ne
+   demandait pas d'UI pour la premiere iteration ("le cerveau du systeme").
+   Une CLI (`src/cli.js`) suffisait pour piloter add/analyze/list/top/show.
+   Une interface web locale a ete ajoutee dans une iteration suivante
+   (voir points 10-12 ci-dessous) ; les integrations externes (Notion, CRM,
+   Google Sheets, LinkedIn) restent hors-perimetre (section 23).
+
+10. **"Probleme principal" vs "problemes secondaires" (ajoute pour
+    l'affichage du resultat).** Le moteur `offer_matching` detecte une liste
+    de signaux qui declenchent une offre, sans notion de hierarchie (tous
+    les criteres PROBLEME valent 5 points, section 7). Pour l'affichage
+    "besoin detecte" demande par l'interface, le premier signal detecte
+    (dans l'ordre de `config/offers.json`) est presente comme "probleme
+    principal" et les suivants comme "secondaires". C'est une convention de
+    presentation, pas une regle de score : elle n'affecte ni le total, ni la
+    temperature, ni l'offre recommandee.
+
+11. **"Niveau de confiance" (ajoute pour l'affichage).** Ni demande dans le
+    bareme ni dans le schema d'origine. Regle simple et transparente ajoutee
+    dans `src/analysis/index.js` (`assessConfidence`) : "Eleve" si au moins un
+    fait observe est renseigne, "Faible" si seulement des hypotheses, "Non
+    determine" si aucun des deux. Ne modifie aucun score ; sert uniquement a
+    rappeler visuellement la regle "ne jamais presenter une hypothese comme
+    un fait" (section 6) au moment de la decision.
+
+12. **Interface web : un seul flux "ajouter + analyser".** Le formulaire
+    "Nouveau prospect" appelle un point d'entree combine (`POST /api/analyze`)
+    qui fait `addProspect` puis `analyzeExisting` en une seule action, pour
+    coller au parcours demande ("j'arrive -> je renseigne -> je clique sur
+    analyser -> j'ai une decision claire"). Les endpoints separes
+    (`POST /api/prospects`, `POST /api/prospects/:id/analyze`) restent
+    disponibles (utilises par la CLI et pour re-analyser une fiche
+    existante depuis sa page de detail).
 
 9. **Pas de scoring/qualification automatique par IA a partir de texte brut.**
    La section 22 interdit le scraping agressif et la section 6 interdit

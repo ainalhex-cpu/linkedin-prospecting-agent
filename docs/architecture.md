@@ -93,6 +93,24 @@ recence) plutot qu'un simple tri par score total, pour rester fidele a l'ordre
 de priorite explicite du brief (section 16). Voir `assumptions.md` pour le
 detail de ce choix.
 
+## Interface (CLI + web)
+
+`src/server/api.js` est une couche de service partagee, sans regle metier
+propre : elle enchaine `schema/prospect.js` (creation), `deduplication/`,
+`analysis/` (analyse) et `pipeline/` (priorisation), au-dessus de
+`store/prospectStore.js`. La CLI (`src/cli.js`) et le serveur HTTP
+(`src/server/server.js`) appellent tous les deux cette meme couche — aucune
+logique n'est dupliquee entre les deux interfaces.
+
+`src/server/server.js` est un serveur HTTP minimal (`node:http`, sans
+framework) qui sert les fichiers statiques de `/public` (une page HTML +
+CSS + JS vanilla, sans build step) et expose une petite API JSON
+(`/api/config`, `/api/prospects`, `/api/analyze`, `/api/top`, etc.). Le
+front-end (`public/app.js`) ne code en dur aucun signal ni aucune regle : il
+recupere le catalogue de signaux, le bareme et les offres via `/api/config`
+(qui relit directement les fichiers de `/config`), et se contente de les
+afficher et de les envoyer a l'API au moment de l'analyse.
+
 ## Ce qui n'est PAS construit en V1 (volontairement)
 
 - Aucune connexion a LinkedIn (scraping, automatisation, API).

@@ -8,22 +8,67 @@ function buildExclusionJustification(raisons) {
   return `Prospect exclu (${labels}). Aucun score calcule pour eviter d'inventer une qualification. Statut : Hypothese a confirmer / Non identifie si de nouvelles informations apparaissent.`;
 }
 
-function buildJustification({ offerResult, scoreResult, temperature, offersConfig, signalsConfig }) {
-  const parts = [];
-
+function buildOfferJustification(offerResult, offersConfig, signalsConfig) {
   if (offerResult.offre === 'NON_IDENTIFIE') {
-    parts.push("Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer).");
-  } else {
-    const label = offersConfig[offerResult.offre]?.label || offerResult.offre;
-    const signalLabels = offerResult.signaux_detectes
-      .map((key) => signalsConfig.labels?.[key] || key)
-      .join(', ');
-    parts.push(`Offre ${label} recommandee sur la base des signaux observes : ${signalLabels || 'non identifie'}.`);
+    return "Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer).";
   }
+  const label = offersConfig[offerResult.offre]?.label || offerResult.offre;
+  const signalLabels = offerResult.signaux_detectes
+    .map((key) => signalsConfig.labels?.[key] || key)
+    .join(', ');
+  return `Offre ${label} recommandee sur la base des signaux observes : ${signalLabels || 'non identifie'}.`;
+}
 
-  parts.push(`Score total ${scoreResult.score_total}/100 -> temperature ${temperature}.`);
+function buildJustification({ offerResult, scoreResult, temperature, offersConfig, signalsConfig }) {
+  const offerJustification = buildOfferJustification(offerResult, offersConfig, signalsConfig);
+  return `${offerJustification} Score total ${scoreResult.score_total}/100 -> temperature ${temperature}.`;
+}
 
-  return parts.join(' ');
+function buildActionJustification({ temperature, action, intentionSignals, scoreTotal }) {
+  switch (action) {
+    case 'CONVERSATION': {
+      const labels = intentionSignals.map((s) => s.label).join(', ');
+      return `Score total ${scoreTotal}/100 (>= seuil HOT) ET signal(aux) d'intention reel(s) detecte(s) : ${labels}. Une conversation directe est justifiee.`;
+    }
+    case 'WARM_UP':
+      if (intentionSignals.length === 0) {
+        return `Score total ${scoreTotal}/100 : excellent profil, mais aucun signal d'intention reel observe. Un score eleve seul ne suffit pas a declencher une conversation : on cree du lien avant d'aller plus loin.`;
+      }
+      return `Score total ${scoreTotal}/100 : bon profil avec un debut d'intention (${intentionSignals
+        .map((s) => s.label)
+        .join(', ')}), mais pas encore suffisant pour une conversation directe.`;
+    case 'NURTURE':
+      return `Score total ${scoreTotal}/100 : profil interessant mais encore trop peu mature ou peu de signaux de probleme/intention pour justifier une action immediate.`;
+    case 'IGNORE':
+    default:
+      return 'Prospect exclu : voir les raisons d\'exclusion ci-dessus.';
+  }
+}
+
+function listTrueSignals(categorySignals, labels) {
+  return Object.entries(categorySignals || {})
+    .filter(([, value]) => value === true)
+    .map(([key]) => ({ key, label: labels?.[key] || key }));
+}
+
+function buildProblemBreakdown(offerResult, signalsConfig) {
+  const detected = offerResult.signaux_detectes || [];
+  if (detected.length === 0) {
+    return { principal: null, secondaires: [] };
+  }
+  const [principalKey, ...rest] = detected;
+  return {
+    principal: signalsConfig.labels?.[principalKey] || principalKey,
+    secondaires: rest.map((key) => signalsConfig.labels?.[key] || key)
+  };
+}
+
+function assessConfidence(prospect) {
+  const hasFaits = (prospect.faits_observes || []).some((f) => f && f.trim());
+  const hasHypotheses = (prospect.hypotheses || []).some((h) => h && h.trim());
+  if (hasFaits) return 'Eleve (appuye sur des faits observes)';
+  if (hasHypotheses) return 'Faible (hypotheses uniquement, a confirmer)';
+  return 'Non determine (aucun fait ni hypothese renseigne)';
 }
 
 function nextActionSuggestion(action, offre) {
@@ -51,6 +96,7 @@ export function analyzeProspect(prospect, config, { event } = {}) {
   let updated;
 
   if (qualification.excluded) {
+    const exclusionJustification = buildExclusionJustification(qualification.raisons);
     updated = {
       ...prospect,
       score_fit: null,
@@ -60,9 +106,16 @@ export function analyzeProspect(prospect, config, { event } = {}) {
       score_total: null,
       temperature: 'IGNORE',
       offre_recommandee: 'NON_IDENTIFIE',
-      justification: buildExclusionJustification(qualification.raisons),
+      justification: exclusionJustification,
+      justification_offre: null,
+      justification_action: exclusionJustification,
       action_recommandee: 'IGNORE',
       prochaine_action: nextActionSuggestion('IGNORE'),
+      probleme_principal: null,
+      problemes_secondaires: [],
+      niveau_confiance: assessConfidence(prospect),
+      signaux_intention_detectes: [],
+      raisons_exclusion: qualification.raisons,
       derniere_analyse: now
     };
   } else {
@@ -70,12 +123,20 @@ export function analyzeProspect(prospect, config, { event } = {}) {
     const temperature = determineTemperature(scoreResult.score_total, prospect.signals, config.thresholds);
     const offerResult = matchOffer(prospect.signals, config.offers);
     const action = config.thresholds.action_map[temperature];
+    const intentionSignals = listTrueSignals(prospect.signals.intention, config.signals.labels);
+    const { principal, secondaires } = buildProblemBreakdown(offerResult, config.signals);
     const justification = buildJustification({
       offerResult,
       scoreResult,
       temperature,
       offersConfig: config.offers,
       signalsConfig: config.signals
+    });
+    const justificationAction = buildActionJustification({
+      temperature,
+      action,
+      intentionSignals,
+      scoreTotal: scoreResult.score_total
     });
 
     updated = {
@@ -88,8 +149,15 @@ export function analyzeProspect(prospect, config, { event } = {}) {
       temperature,
       offre_recommandee: offerResult.offre,
       justification,
+      justification_offre: buildOfferJustification(offerResult, config.offers, config.signals),
+      justification_action: justificationAction,
       action_recommandee: action,
       prochaine_action: nextActionSuggestion(action, offerResult.offre),
+      probleme_principal: principal,
+      problemes_secondaires: secondaires,
+      niveau_confiance: assessConfidence(prospect),
+      signaux_intention_detectes: intentionSignals,
+      raisons_exclusion: [],
       derniere_analyse: now
     };
   }

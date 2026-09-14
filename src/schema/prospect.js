@@ -101,8 +101,15 @@ export function createProspect(input = {}) {
     temperature: input.temperature || null,
     offre_recommandee: input.offre_recommandee || null,
     justification: input.justification || '',
+    justification_offre: input.justification_offre || null,
+    justification_action: input.justification_action || null,
     action_recommandee: input.action_recommandee || null,
     prochaine_action: input.prochaine_action || '',
+    probleme_principal: input.probleme_principal || null,
+    problemes_secondaires: input.problemes_secondaires || [],
+    niveau_confiance: input.niveau_confiance || null,
+    signaux_intention_detectes: input.signaux_intention_detectes || [],
+    raisons_exclusion: input.raisons_exclusion || [],
 
     // Pipeline & suivi
     statut_pipeline: input.statut_pipeline || 'Nouveau',

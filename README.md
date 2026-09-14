@@ -21,8 +21,39 @@ pour les hypotheses prises pendant la construction.
 
 ```bash
 npm test          # lance tous les tests (node:test)
+npm run serve     # lance l'interface web locale sur http://localhost:4173
 npm run cli -- <commande>   # ou directement : node src/cli.js <commande>
 ```
+
+## Interface web (V1)
+
+`npm run serve` (ou `node src/cli.js serve`) demarre un petit serveur HTTP
+local (Node natif, aucun framework) qui sert une interface a une page sur
+`http://localhost:4173`. Elle permet, sans toucher a la CLI :
+
+1. **Nouveau prospect** — un formulaire (informations, signaux observes
+   coches depuis le catalogue de `config/signals.json`, faits observes,
+   hypotheses, sources) puis un bouton "Analyser le prospect" qui cree la
+   fiche et lance l'analyse en une seule etape.
+2. **Resultat de l'analyse** — score detaille (FIT/MATURITE/PROBLEME/
+   INTENTION/TOTAL), temperature, signaux d'intention si HOT, besoin detecte
+   (probleme principal/secondaire, niveau de confiance, faits vs hypotheses),
+   offre recommandee justifiee, action recommandee justifiee, prochaine
+   action.
+3. **Pipeline** — tableau de tous les prospects, triable par score, par
+   temperature ou par date de derniere analyse ; clic sur une ligne pour
+   ouvrir la fiche complete.
+4. **Top prospects** — les prospects les plus prioritaires du jour.
+5. **Fiche prospect** — informations, analyse courante, historique du score,
+   historique de temperature, interactions, et un bouton pour relancer
+   l'analyse (utile pour marquer un nouvel evenement).
+
+L'interface ne fait qu'appeler les memes moteurs que la CLI (via
+`src/server/api.js`, une couche de service partagee) : aucune regle metier
+n'a ete dupliquee ou modifiee pour la construire. Les donnees restent dans
+`data/prospects.json` (aucune nouvelle base ajoutee). Elle n'automatise
+toujours rien sur LinkedIn : c'est un outil de saisie et de decision, pas
+un robot.
 
 ## Commandes CLI
 
@@ -109,6 +140,7 @@ Le catalogue complet des signaux disponibles (avec leurs libelles) est dans
 ```
 /config      Regles metier (ICP, scoring, offres, signaux, seuils, pipeline)
 /data        Donnees persistees (prospects.json, interactions.json)
+/public      Interface web statique (index.html, styles.css, app.js — vanilla JS)
 /src
   schema/          Fiche prospect (creation, valeurs par defaut)
   scoring/         Calcul du score /100
@@ -119,8 +151,9 @@ Le catalogue complet des signaux disponibles (avec leurs libelles) est dans
   pipeline/        Statuts + priorisation (top N)
   analysis/        Orchestrateur (enchaine les moteurs) + formatage de sortie
   store/           Persistance JSON
+  server/          api.js (couche de service partagee CLI/web) + server.js (HTTP natif)
   cli.js           Interface en ligne de commande
-/tests       Tests par moteur + scenarios de bout en bout (Tests A a G)
+/tests       Tests par moteur + scenarios de bout en bout (Tests A a G) + tests API/serveur
 /docs        architecture.md, assumptions.md
 ```
 
@@ -132,7 +165,16 @@ Le catalogue complet des signaux disponibles (avec leurs libelles) est dans
 - les 7 scenarios de bout en bout du cahier des charges (Tests A a G :
   HOT, WARM sans intention, IGNORE debutant, VISIBILITE, SERENITE, LIBERTE,
   informations insuffisantes) ;
-- un test d'evolution du score/temperature dans le temps.
+- un test d'evolution du score/temperature dans le temps ;
+- les tests de la couche de service partagee (`tests/server/api.test.js`) :
+  ajout d'un prospect, absence de doublon, analyse, conservation de
+  l'historique, priorisation ;
+- un test d'integration HTTP (`tests/server/server.test.js`) qui demarre le
+  vrai serveur sur un port ephemere et verifie la page HTML, l'API de
+  configuration, le cycle add→analyze→list→top en conditions reelles.
+
+Les tests serveur utilisent un fichier de donnees temporaire
+(`PROSPECTS_FILE`) : ils ne touchent jamais a `data/prospects.json`.
 
 ## Ce qui n'est pas fait en V1 (par choix)
 
@@ -140,3 +182,5 @@ Le catalogue complet des signaux disponibles (avec leurs libelles) est dans
 - Aucune integration CRM / Notion / Google Sheets (prevue pour la V2).
 - Aucune extraction automatique de signaux depuis un texte brut par IA : les
   signaux sont saisis explicitement pour rester audités et fiables.
+- Pas de gestion multi-utilisateur ni d'authentification (outil local,
+  usage personnel).

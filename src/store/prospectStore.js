@@ -3,7 +3,11 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_PATH = path.join(__dirname, '..', '..', 'data', 'prospects.json');
+// PROSPECTS_FILE permet d'isoler le fichier de donnees (utilise par les tests
+// d'integration du serveur pour ne jamais toucher a data/prospects.json).
+const DEFAULT_PATH = process.env.PROSPECTS_FILE
+  ? path.resolve(process.env.PROSPECTS_FILE)
+  : path.join(__dirname, '..', '..', 'data', 'prospects.json');
 
 export function loadProspects(filePath = DEFAULT_PATH) {
   const raw = readFileSync(filePath, 'utf-8');

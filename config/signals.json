@@ -1,0 +1,43 @@
+{
+  "description": "Catalogue de tous les signaux utilisables dans prospect.signals. Sert de reference/documentation et de base de validation. 'contexte' regroupe des signaux qui n'entrent pas dans le score mais qui alimentent la detection de besoin (offre LIBERTE) et les exclusions.",
+  "categories": {
+    "fit": ["coach_business_entrepreneuriat", "activite_etablie", "marche_francophone"],
+    "maturite": ["offre_commercialisee", "clients_audience_etablis", "croissance_visible", "delegation_equipe_prestataires"],
+    "probleme": ["manque_de_temps", "communication", "organisation", "operations", "experience_client", "besoin_delegation"],
+    "intention": ["delegation_explicitement_recherchee", "recrutement", "recherche_aide_prestataire", "croissance_importante_lancement"],
+    "contexte": ["plusieurs_offres", "forte_croissance", "lancements_reguliers", "equipe_ou_prestataires", "besoin_coordination"],
+    "exclusion": ["debutant", "aucune_offre", "activite_inactive", "hors_cible", "sans_capacite_delegation", "mauvais_marche", "profil_trop_eloigne", "informations_insuffisantes"]
+  },
+  "labels": {
+    "coach_business_entrepreneuriat": "Coach business / entrepreneuriat",
+    "activite_etablie": "Activite etablie",
+    "marche_francophone": "Marche francophone",
+    "offre_commercialisee": "Offre commercialisee",
+    "clients_audience_etablis": "Clients / audience etablis",
+    "croissance_visible": "Croissance visible",
+    "delegation_equipe_prestataires": "Delegation / equipe / prestataires deja en place",
+    "manque_de_temps": "Manque de temps",
+    "communication": "Probleme de communication / visibilite",
+    "organisation": "Probleme d'organisation",
+    "operations": "Probleme operationnel",
+    "experience_client": "Probleme d'experience client",
+    "besoin_delegation": "Besoin de delegation exprime ou observe",
+    "delegation_explicitement_recherchee": "Delegation explicitement recherchee",
+    "recrutement": "Recrutement en cours",
+    "recherche_aide_prestataire": "Recherche d'aide / prestataire",
+    "croissance_importante_lancement": "Croissance importante / lancement en cours",
+    "plusieurs_offres": "Plusieurs offres commercialisees en parallele",
+    "forte_croissance": "Forte croissance de l'activite",
+    "lancements_reguliers": "Lancements de programmes reguliers",
+    "equipe_ou_prestataires": "Equipe ou prestataires en place",
+    "besoin_coordination": "Besoin de coordination entre plusieurs chantiers",
+    "debutant": "Debutant, activite non etablie",
+    "aucune_offre": "Aucune offre commerciale claire",
+    "activite_inactive": "Activite inactive / peu de signaux recents",
+    "hors_cible": "Hors cible (ni coach, ni formateur, ni consultant proche)",
+    "sans_capacite_delegation": "Aucune capacite apparente de delegation (budget/structure)",
+    "mauvais_marche": "Marche hors zone francophone prioritaire",
+    "profil_trop_eloigne": "Profil trop eloigne de l'ICP",
+    "informations_insuffisantes": "Informations insuffisantes pour qualifier"
+  }
+}

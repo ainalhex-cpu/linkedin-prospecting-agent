@@ -1,0 +1,17 @@
+{
+  "name": "linkedin-prospecting-agent",
+  "version": "1.0.0",
+  "description": "Agent de prospection LinkedIn - moteur d'identification, qualification et priorisation de prospects (V1 - cerveau du systeme, sans automatisation LinkedIn)",
+  "type": "module",
+  "private": true,
+  "main": "src/cli.js",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\"",
+    "cli": "node src/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

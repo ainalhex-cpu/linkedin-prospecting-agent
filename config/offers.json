@@ -1,0 +1,28 @@
+{
+  "description": "Regles de detection de besoin -> offre. On detecte d'abord le probleme, puis on en deduit l'offre. LIBERTE n'est jamais une simple addition mecanique de VISIBILITE + SERENITE : elle se declenche des que plusieurs registres de probleme se chevauchent ou qu'un signal structurel de croissance/equipe est present.",
+  "VISIBILITE": {
+    "label": "VISIBILITE",
+    "pitch": "Pour les entrepreneurs qui ont quelque chose a dire mais qui n'ont plus le temps de maintenir une presence reguliere.",
+    "perimetre": ["strategie editoriale", "calendrier editorial", "creation de contenus", "redaction", "preparation", "publication", "animation legere", "reporting"],
+    "format_reference": "2 publications/semaine sur une plateforme principale",
+    "signals": ["manque_de_temps", "communication"]
+  },
+  "SERENITE": {
+    "label": "SERENITE",
+    "pitch": "Pour les entrepreneurs dont le quotidien operationnel prend trop de place.",
+    "perimetre": ["organisation", "suivi client", "demandes entrantes", "relances", "coordination", "echeances", "taches recurrentes", "structuration de processus", "reporting", "suivi operationnel"],
+    "signals": ["organisation", "operations", "experience_client", "besoin_delegation"]
+  },
+  "LIBERTE": {
+    "label": "LIBERTE / ACCOMPAGNEMENT GLOBAL",
+    "pitch": "Pour les entrepreneurs qui veulent deleguer une vraie partie de leur activite. A traiter comme une solution globale, pas comme une addition mecanique des deux autres offres.",
+    "perimetre": ["solution globale de delegation operationnelle et de communication"],
+    "extra_signals": ["plusieurs_offres", "forte_croissance", "lancements_reguliers", "equipe_ou_prestataires", "besoin_coordination", "delegation_equipe_prestataires"],
+    "trigger_rule": "declenchee si (signaux VISIBILITE ET signaux SERENITE presents simultanement) OU si au moins un extra_signal est present"
+  },
+  "NON_IDENTIFIE": {
+    "label": "Non identifie",
+    "pitch": "Aucun signal de probleme suffisant n'a ete observe. Ne pas forcer une offre.",
+    "justification_type": "Hypothese a confirmer"
+  }
+}

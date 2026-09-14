@@ -1,0 +1,47 @@
+{
+  "description": "Bareme de scoring sur 100 points. Chaque critere pointe vers un booleen dans prospect.signals.<categorie>.<key>. Modifiable sans toucher au moteur.",
+  "max_total": 100,
+  "categories": {
+    "fit": {
+      "label": "FIT",
+      "max_points": 30,
+      "criteria": [
+        { "key": "coach_business_entrepreneuriat", "label": "Coach business / entrepreneuriat", "points": 15 },
+        { "key": "activite_etablie", "label": "Activite etablie", "points": 10 },
+        { "key": "marche_francophone", "label": "Marche francophone", "points": 5 }
+      ]
+    },
+    "maturite": {
+      "label": "MATURITE",
+      "max_points": 20,
+      "criteria": [
+        { "key": "offre_commercialisee", "label": "Offre commercialisee", "points": 5 },
+        { "key": "clients_audience_etablis", "label": "Clients / audience etablis", "points": 5 },
+        { "key": "croissance_visible", "label": "Croissance visible", "points": 5 },
+        { "key": "delegation_equipe_prestataires", "label": "Delegation / equipe / prestataires", "points": 5 }
+      ]
+    },
+    "probleme": {
+      "label": "PROBLEME",
+      "max_points": 30,
+      "criteria": [
+        { "key": "manque_de_temps", "label": "Manque de temps", "points": 5 },
+        { "key": "communication", "label": "Communication", "points": 5 },
+        { "key": "organisation", "label": "Organisation", "points": 5 },
+        { "key": "operations", "label": "Operations", "points": 5 },
+        { "key": "experience_client", "label": "Experience client", "points": 5 },
+        { "key": "besoin_delegation", "label": "Besoin de delegation", "points": 5 }
+      ]
+    },
+    "intention": {
+      "label": "INTENTION",
+      "max_points": 20,
+      "criteria": [
+        { "key": "delegation_explicitement_recherchee", "label": "Delegation explicitement recherchee", "points": 7 },
+        { "key": "recrutement", "label": "Recrutement", "points": 5 },
+        { "key": "recherche_aide_prestataire", "label": "Recherche d'aide / prestataire", "points": 5 },
+        { "key": "croissance_importante_lancement", "label": "Croissance importante / lancement", "points": 3 }
+      ]
+    }
+  }
+}

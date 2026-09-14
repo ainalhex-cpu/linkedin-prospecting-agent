@@ -1,0 +1,19 @@
+{
+  "description": "Statuts de pipeline disponibles, dans un ordre de progression indicatif (non contraignant : un prospect peut passer directement de Nouveau a Ignore par exemple).",
+  "statuts": [
+    "Nouveau",
+    "A analyser",
+    "Qualifie",
+    "Warm-up",
+    "Conversation",
+    "Contacte",
+    "Reponse",
+    "Appel",
+    "Opportunite",
+    "Client",
+    "Nurture",
+    "Perdu",
+    "Ignore"
+  ],
+  "statut_initial": "Nouveau"
+}

@@ -1,0 +1,27 @@
+{
+  "description": "Seuils de temperature et mapping action recommandee. Modifiable sans toucher au moteur.",
+  "score_max": 100,
+  "hot_min": 80,
+  "warm_min": 60,
+  "cold_min": 0,
+  "hot_requires_intention_signal": true,
+  "hot_downgrade_temperature": "WARM",
+  "temperature_labels": {
+    "HOT": "🔥 HOT",
+    "WARM": "🟠 WARM",
+    "COLD": "🔵 COLD",
+    "IGNORE": "❌ IGNORE"
+  },
+  "action_map": {
+    "HOT": "CONVERSATION",
+    "WARM": "WARM_UP",
+    "COLD": "NURTURE",
+    "IGNORE": "IGNORE"
+  },
+  "action_labels": {
+    "CONVERSATION": "🔥 CONVERSATION",
+    "WARM_UP": "🟠 WARM-UP",
+    "NURTURE": "🔵 NURTURE",
+    "IGNORE": "❌ IGNORE"
+  }
+}

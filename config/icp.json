@@ -1,0 +1,45 @@
+{
+  "positionnement": {
+    "role": "Bras droit operationnel pour coachs & formateurs",
+    "axes": ["Visibilite", "Operations", "Experience client"],
+    "promesse": "Tu n'as pas besoin de faire plus. Tu as besoin de porter moins."
+  },
+  "cible_principale": [
+    "coach business",
+    "coach entrepreneurial",
+    "coach en entrepreneuriat",
+    "coach professionnel avec activite commerciale etablie"
+  ],
+  "cible_secondaire": [
+    "formateur",
+    "expert en accompagnement",
+    "consultant / coaching hybride",
+    "entrepreneur vendant de l'accompagnement ou de la formation"
+  ],
+  "maturite_recherchee": [
+    "a deja une offre",
+    "a deja des clients",
+    "a une activite visible",
+    "publie ou communique deja",
+    "a une audience ou un reseau",
+    "developpe son activite",
+    "lance regulierement des offres ou programmes",
+    "commence a deleguer ou envisage de deleguer",
+    "peut avoir besoin d'un soutien operationnel"
+  ],
+  "pays_francophones_prioritaires": [
+    { "pays": "France", "priorite": 1 },
+    { "pays": "Belgique", "priorite": 2 },
+    { "pays": "Suisse", "priorite": 3 },
+    { "pays": "Canada", "priorite": 4 },
+    { "pays": "Luxembourg", "priorite": 5 },
+    { "pays": "Maroc", "priorite": 5 },
+    { "pays": "Tunisie", "priorite": 5 },
+    { "pays": "Senegal", "priorite": 5 },
+    { "pays": "Cote d'Ivoire", "priorite": 5 }
+  ],
+  "profils_directionnels_reference": {
+    "note": "Ces profils servent uniquement de reference de maturite/type d'activite. Ils ne sont PAS des prospects a cibler obligatoirement.",
+    "exemples": ["Alec Henry", "Julien Korn", "Amandine Serrani"]
+  }
+}

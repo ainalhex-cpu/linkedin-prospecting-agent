@@ -232,5 +232,112 @@
     ],
     "facilite_contact": null,
     "notes": ""
+  },
+  {
+    "id": "1b2fb2fd-de23-48e4-b4ac-01a627ef99c2",
+    "nom": "Louis",
+    "prenom": "Sebastien",
+    "entreprise": "AFTRAL",
+    "pays": "France",
+    "url_linkedin": "",
+    "linkedin_id": "",
+    "activite": "Non identifie",
+    "type_prospect": "Non identifie",
+    "offre": "Non identifie",
+    "audience": "2 170 abonnes",
+    "niveau_maturite": "Non identifie",
+    "activite_linkedin": "Non identifie",
+    "signaux_observes": [],
+    "problemes_potentiels": [],
+    "faits_observes": [
+      "Et depuis 9 ans, j'accompagne les equipes pedagogiques du secteur Transport & Logistique dans leur montee en competences.",
+      "2 170 abonnes",
+      "Pays renseigne : France"
+    ],
+    "hypotheses": [],
+    "sources": [
+      "Texte colle par l'utilisateur (profil/posts LinkedIn)"
+    ],
+    "signals": {
+      "fit": {
+        "coach_business_entrepreneuriat": false,
+        "activite_etablie": true,
+        "marche_francophone": true
+      },
+      "maturite": {
+        "offre_commercialisee": false,
+        "clients_audience_etablis": true,
+        "croissance_visible": false,
+        "delegation_equipe_prestataires": false
+      },
+      "probleme": {
+        "manque_de_temps": false,
+        "communication": false,
+        "organisation": false,
+        "operations": false,
+        "experience_client": false,
+        "besoin_delegation": false
+      },
+      "intention": {
+        "delegation_explicitement_recherchee": false,
+        "recrutement": false,
+        "recherche_aide_prestataire": false,
+        "croissance_importante_lancement": false
+      },
+      "contexte": {
+        "plusieurs_offres": false,
+        "forte_croissance": false,
+        "lancements_reguliers": false,
+        "equipe_ou_prestataires": false,
+        "besoin_coordination": false
+      },
+      "exclusion": {
+        "debutant": false,
+        "aucune_offre": false,
+        "activite_inactive": false,
+        "hors_cible": false,
+        "sans_capacite_delegation": false,
+        "mauvais_marche": false,
+        "profil_trop_eloigne": false,
+        "informations_insuffisantes": false
+      }
+    },
+    "score_fit": 15,
+    "score_maturite": 5,
+    "score_probleme": 0,
+    "score_intention": 0,
+    "score_total": 20,
+    "temperature": "COLD",
+    "offre_recommandee": "NON_IDENTIFIE",
+    "justification": "Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer). Score total 20/100 -> temperature COLD.",
+    "justification_offre": "Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer).",
+    "justification_action": "Score total 20/100 : profil interessant mais encore trop peu mature ou peu de signaux de probleme/intention pour justifier une action immediate.",
+    "action_recommandee": "NURTURE",
+    "prochaine_action": "Observer et laisser murir : revisiter la fiche lors du prochain signal significatif.",
+    "probleme_principal": null,
+    "problemes_secondaires": [],
+    "niveau_confiance": "Eleve (appuye sur des faits observes)",
+    "signaux_intention_detectes": [],
+    "raisons_exclusion": [],
+    "statut_pipeline": "Nouveau",
+    "date_decouverte": "2026-09-15T16:37:29.461Z",
+    "derniere_analyse": "2026-09-15T16:37:29.462Z",
+    "historique_interactions": [],
+    "historique_score": [
+      {
+        "date": "2026-09-15T16:37:29.462Z",
+        "score_total": 20,
+        "evenement": "Analyse initiale via interface"
+      }
+    ],
+    "historique_temperature": [
+      {
+        "date": "2026-09-15T16:37:29.462Z",
+        "temperature": "COLD",
+        "evenement": "Analyse initiale via interface"
+      }
+    ],
+    "facilite_contact": null,
+    "notes": ""
   }
 ]

@@ -14,12 +14,19 @@
         { "pattern": "coach\\s+(business|entrepreneur(ial)?|professionnel)", "confidence": "high" },
         { "pattern": "j'accompagne\\s+(les\\s+)?entrepreneurs", "confidence": "high" },
         { "pattern": "j'aide\\s+(les\\s+)?entrepreneurs", "confidence": "medium" },
-        { "pattern": "coach\\s+en\\s+entrepreneuriat", "confidence": "high" }
+        { "pattern": "coach\\s+en\\s+entrepreneuriat", "confidence": "high" },
+        { "pattern": "j'accompagne\\s+(les\\s+|des\\s+)?dirigeants", "confidence": "high" },
+        { "pattern": "j'aide\\s+(les\\s+|des\\s+)?dirigeants", "confidence": "medium" },
+        { "pattern": "sparring\\s+partner", "confidence": "high" },
+        { "pattern": "dirigeants?\\s+de\\s+pme", "confidence": "high" }
       ],
       "activite_etablie": [
         { "pattern": "depuis\\s+\\d{4}\\b", "confidence": "high" },
         { "pattern": "depuis\\s+(\\d+|plusieurs)\\s+ans?\\b", "confidence": "high" },
-        { "pattern": "mes\\s+clients\\s+me\\s+suivent", "confidence": "medium" }
+        { "pattern": "mes\\s+clients\\s+me\\s+suivent", "confidence": "medium" },
+        { "pattern": "\\+\\s?\\d{2,}\\s+(entrepreneurs|dirigeants|clients)\\b", "confidence": "high" },
+        { "pattern": "\\d[\\d\\s.,]{3,}\\s+abonnes", "confidence": "high" },
+        { "pattern": "plus\\s+de\\s+\\d+\\s+relations", "confidence": "medium" }
       ],
       "marche_francophone": []
     },
@@ -29,26 +36,33 @@
         { "pattern": "mon\\s+accompagnement", "confidence": "high" },
         { "pattern": "ma\\s+formation", "confidence": "high" },
         { "pattern": "j'ai\\s+lance\\s+(mon|une)\\s+(programme|offre|formation)", "confidence": "high" },
-        { "pattern": "je\\s+propose\\s+(un|une)\\s+(programme|accompagnement|formation)", "confidence": "medium" }
+        { "pattern": "je\\s+propose\\s+(un|une)\\s+(programme|accompagnement|formation)", "confidence": "medium" },
+        { "pattern": "(un\\s+)?accompagnement\\s+sur\\s+\\d+\\s*mois", "confidence": "high" },
+        { "pattern": "programme\\s+sur\\s+\\d+\\s*mois", "confidence": "high" }
       ],
       "clients_audience_etablis": [
         { "pattern": "mes\\s+clients", "confidence": "medium" },
         { "pattern": "ma\\s+communaute", "confidence": "medium" },
         { "pattern": "mes\\s+abonnes", "confidence": "medium" },
-        { "pattern": "followers", "confidence": "medium" }
+        { "pattern": "followers", "confidence": "medium" },
+        { "pattern": "\\d[\\d\\s.,]{3,}\\s+abonnes", "confidence": "high" },
+        { "pattern": "\\+\\s?\\d{2,}\\s+(entrepreneurs|dirigeants|clients)\\s+ont", "confidence": "high" },
+        { "pattern": "plus\\s+de\\s+\\d+\\s+relations", "confidence": "medium" }
       ],
       "croissance_visible": [
         { "pattern": "forte\\s+croissance", "confidence": "high" },
         { "pattern": "croissance\\s+rapide", "confidence": "high" },
         { "pattern": "grandit\\s+vite", "confidence": "medium" },
         { "pattern": "mon\\s+activite\\s+explose", "confidence": "medium" },
-        { "pattern": "en\\s+pleine\\s+croissance", "confidence": "high" }
+        { "pattern": "en\\s+pleine\\s+croissance", "confidence": "high" },
+        { "pattern": "\\+\\s?\\d{1,3}\\s?%\\s+de\\s+croissance", "confidence": "high" }
       ],
       "delegation_equipe_prestataires": [
         { "pattern": "mon\\s+equipe", "confidence": "high" },
         { "pattern": "mes\\s+prestataires", "confidence": "high" },
         { "pattern": "mon\\s+assistant(e)?", "confidence": "high" },
-        { "pattern": "j'ai\\s+recrute", "confidence": "medium" }
+        { "pattern": "j'ai\\s+recrute", "confidence": "medium" },
+        { "pattern": "equipe\\s+de\\s+\\d+\\+?\\s*experts", "confidence": "high" }
       ]
     },
     "probleme": {
@@ -130,7 +144,8 @@
       "equipe_ou_prestataires": [
         { "pattern": "mon\\s+equipe", "confidence": "high" },
         { "pattern": "mes\\s+prestataires", "confidence": "high" },
-        { "pattern": "mon\\s+assistant(e)?", "confidence": "high" }
+        { "pattern": "mon\\s+assistant(e)?", "confidence": "high" },
+        { "pattern": "equipe\\s+de\\s+\\d+\\+?\\s*experts", "confidence": "high" }
       ],
       "besoin_coordination": [
         { "pattern": "je\\s+dois\\s+tout\\s+coordonner", "confidence": "high" },

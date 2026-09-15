@@ -1,1 +1,120 @@
-[]
+[
+  {
+    "id": "e0c5f039-1c33-47ec-8600-23a6cf26c52a",
+    "nom": "Ndiaye",
+    "prenom": "Marvin",
+    "entreprise": "ULTRA",
+    "pays": "Belgique",
+    "url_linkedin": "https://www.linkedin.com/in/ndiaye-marvin/",
+    "linkedin_id": "",
+    "activite": "Founder ULTRA & Fresheo | Forbes 30 Under 30 | Sparring Partner des Dirigeants de PME | Réservez votre appel de 45min",
+    "type_prospect": "Coach business / entrepreneuriat",
+    "offre": "Un accompagnement sur 12 mois",
+    "audience": "ULTRA - 23 355 abonnés",
+    "niveau_maturite": "Non identifie",
+    "activite_linkedin": "Non identifie",
+    "signaux_observes": [],
+    "problemes_potentiels": [],
+    "faits_observes": [
+      "Founder ULTRA & Fresheo | Forbes 30 Under 30 | Sparring Partner des Dirigeants de PME | Réservez votre appel de 45min",
+      "Aujourd'hui, +350 entrepreneurs ont deja transforme leur entreprise en machine rentable et previsible.",
+      "Un accompagnement sur 12 mois",
+      "ULTRA - 23 355 abonnés",
+      "+69% de croissance en moyenne",
+      "Une equipe de 10+ experts a vos cotes (RDV toutes les 2 semaines)",
+      "Pays renseigne : Belgique"
+    ],
+    "hypotheses": [],
+    "sources": [
+      "Texte colle par l'utilisateur (profil/posts LinkedIn)"
+    ],
+    "signals": {
+      "fit": {
+        "coach_business_entrepreneuriat": true,
+        "activite_etablie": true,
+        "marche_francophone": true
+      },
+      "maturite": {
+        "offre_commercialisee": true,
+        "clients_audience_etablis": true,
+        "croissance_visible": true,
+        "delegation_equipe_prestataires": true
+      },
+      "probleme": {
+        "manque_de_temps": false,
+        "communication": false,
+        "organisation": false,
+        "operations": false,
+        "experience_client": false,
+        "besoin_delegation": false
+      },
+      "intention": {
+        "delegation_explicitement_recherchee": false,
+        "recrutement": false,
+        "recherche_aide_prestataire": false,
+        "croissance_importante_lancement": false
+      },
+      "contexte": {
+        "plusieurs_offres": false,
+        "forte_croissance": false,
+        "lancements_reguliers": false,
+        "equipe_ou_prestataires": true,
+        "besoin_coordination": false
+      },
+      "exclusion": {
+        "debutant": false,
+        "aucune_offre": false,
+        "activite_inactive": false,
+        "hors_cible": false,
+        "sans_capacite_delegation": false,
+        "mauvais_marche": false,
+        "profil_trop_eloigne": false,
+        "informations_insuffisantes": false
+      }
+    },
+    "score_fit": 30,
+    "score_maturite": 20,
+    "score_probleme": 0,
+    "score_intention": 0,
+    "score_total": 50,
+    "temperature": "COLD",
+    "offre_recommandee": "LIBERTE",
+    "justification": "Offre LIBERTE / ACCOMPAGNEMENT GLOBAL recommandee sur la base des signaux observes : Equipe ou prestataires en place, Delegation / equipe / prestataires deja en place. Score total 50/100 -> temperature COLD.",
+    "justification_offre": "Offre LIBERTE / ACCOMPAGNEMENT GLOBAL recommandee sur la base des signaux observes : Equipe ou prestataires en place, Delegation / equipe / prestataires deja en place.",
+    "justification_action": "Score total 50/100 : profil interessant mais encore trop peu mature ou peu de signaux de probleme/intention pour justifier une action immediate.",
+    "action_recommandee": "NURTURE",
+    "prochaine_action": "Observer et laisser murir : revisiter la fiche lors du prochain signal significatif.",
+    "probleme_principal": "Equipe ou prestataires en place",
+    "problemes_secondaires": [
+      "Delegation / equipe / prestataires deja en place"
+    ],
+    "niveau_confiance": "Eleve (appuye sur des faits observes)",
+    "signaux_intention_detectes": [],
+    "raisons_exclusion": [],
+    "statut_pipeline": "Nouveau",
+    "date_decouverte": "2026-09-15T16:22:52.479Z",
+    "derniere_analyse": "2026-09-15T16:25:25.613Z",
+    "historique_interactions": [],
+    "historique_score": [
+      {
+        "date": "2026-09-15T16:22:52.480Z",
+        "score_total": 5,
+        "evenement": "Analyse initiale via interface"
+      },
+      {
+        "date": "2026-09-15T16:25:25.613Z",
+        "score_total": 50,
+        "evenement": "Mise a jour via interface"
+      }
+    ],
+    "historique_temperature": [
+      {
+        "date": "2026-09-15T16:22:52.480Z",
+        "temperature": "COLD",
+        "evenement": "Analyse initiale via interface"
+      }
+    ],
+    "facilite_contact": null,
+    "notes": ""
+  }
+]

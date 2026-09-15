@@ -116,5 +116,121 @@
     ],
     "facilite_contact": null,
     "notes": ""
+  },
+  {
+    "id": "d6a43803-c422-465c-87e4-ca2c279fd2de",
+    "nom": "David",
+    "prenom": "Soren",
+    "entreprise": "LE CERCLE MDB",
+    "pays": "France",
+    "url_linkedin": "",
+    "linkedin_id": "",
+    "activite": "Non identifie",
+    "type_prospect": "Non identifie",
+    "offre": "Non identifie",
+    "audience": "Non identifie",
+    "niveau_maturite": "Non identifie",
+    "activite_linkedin": "Non identifie",
+    "signaux_observes": [],
+    "problemes_potentiels": [],
+    "faits_observes": [
+      "Je recrute mon bras droit.",
+      "Je cherche quelqu'un pour m'epauler sur tout : le support membres, l'IT et le workplace, l'evenementiel, le RevOps au quotidien (HubSpot propre, tableaux de suivi, petites automatisations, les mains dedans et pas la theorie) et la coordination entre les equipes.",
+      "Pays renseigne : France"
+    ],
+    "hypotheses": [],
+    "sources": [
+      "Texte colle par l'utilisateur (profil/posts LinkedIn)"
+    ],
+    "signals": {
+      "fit": {
+        "coach_business_entrepreneuriat": false,
+        "activite_etablie": false,
+        "marche_francophone": true
+      },
+      "maturite": {
+        "offre_commercialisee": false,
+        "clients_audience_etablis": false,
+        "croissance_visible": false,
+        "delegation_equipe_prestataires": false
+      },
+      "probleme": {
+        "manque_de_temps": false,
+        "communication": false,
+        "organisation": false,
+        "operations": false,
+        "experience_client": false,
+        "besoin_delegation": false
+      },
+      "intention": {
+        "delegation_explicitement_recherchee": false,
+        "recrutement": true,
+        "recherche_aide_prestataire": true,
+        "croissance_importante_lancement": false
+      },
+      "contexte": {
+        "plusieurs_offres": false,
+        "forte_croissance": false,
+        "lancements_reguliers": false,
+        "equipe_ou_prestataires": false,
+        "besoin_coordination": false
+      },
+      "exclusion": {
+        "debutant": false,
+        "aucune_offre": false,
+        "activite_inactive": false,
+        "hors_cible": false,
+        "sans_capacite_delegation": false,
+        "mauvais_marche": false,
+        "profil_trop_eloigne": false,
+        "informations_insuffisantes": false
+      }
+    },
+    "score_fit": 5,
+    "score_maturite": 0,
+    "score_probleme": 0,
+    "score_intention": 10,
+    "score_total": 15,
+    "temperature": "COLD",
+    "offre_recommandee": "NON_IDENTIFIE",
+    "justification": "Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer). Score total 15/100 -> temperature COLD.",
+    "justification_offre": "Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer).",
+    "justification_action": "Score total 15/100 : profil interessant mais encore trop peu mature ou peu de signaux de probleme/intention pour justifier une action immediate.",
+    "action_recommandee": "NURTURE",
+    "prochaine_action": "Observer et laisser murir : revisiter la fiche lors du prochain signal significatif.",
+    "probleme_principal": null,
+    "problemes_secondaires": [],
+    "niveau_confiance": "Eleve (appuye sur des faits observes)",
+    "signaux_intention_detectes": [
+      {
+        "key": "recrutement",
+        "label": "Recrutement en cours"
+      },
+      {
+        "key": "recherche_aide_prestataire",
+        "label": "Recherche d'aide / prestataire"
+      }
+    ],
+    "raisons_exclusion": [],
+    "statut_pipeline": "Nouveau",
+    "date_decouverte": "2026-09-15T16:32:46.954Z",
+    "derniere_analyse": "2026-09-15T16:32:46.955Z",
+    "historique_interactions": [],
+    "historique_score": [
+      {
+        "date": "2026-09-15T16:32:46.955Z",
+        "score_total": 15,
+        "evenement": "Analyse initiale via interface"
+      }
+    ],
+    "historique_temperature": [
+      {
+        "date": "2026-09-15T16:32:46.955Z",
+        "temperature": "COLD",
+        "evenement": "Analyse initiale via interface"
+      }
+    ],
+    "facilite_contact": null,
+    "notes": ""
   }
 ]

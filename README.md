@@ -48,6 +48,32 @@ local (Node natif, aucun framework) qui sert une interface a une page sur
    historique de temperature, interactions, et un bouton pour relancer
    l'analyse (utile pour marquer un nouvel evenement).
 
+## Analyser un profil LinkedIn a partir d'un texte colle (V1.1)
+
+Nouvelle vue **"🔍 Analyser un profil LinkedIn"** : collez le contenu
+disponible sur un profil (description, experiences, derniers posts...), et
+le moteur d'extraction (`src/extraction/`) detecte automatiquement les
+signaux reellement presents dans le texte — sans jamais en inventer un
+seul — puis les transmet **au moteur de qualification/scoring existant**,
+inchange (`src/qualification`, `src/scoring`, `src/temperature`,
+`src/offer_matching`). Aucune regle metier n'a ete dupliquee ni modifiee
+pour cette fonctionnalite.
+
+Le resultat affiche exactement les memes blocs que l'analyse manuelle
+(score, temperature, besoin detecte, offre, action), plus deux ajouts :
+- **"Pourquoi ce resultat ?"** — pour chaque signal detecte, la phrase
+  exacte du texte qui le justifie et son impact sur le score existant
+  (ex. `+5 points INTENTION`), ou "hypothese, non retenu" si le signal
+  n'etait pas assez explicite pour etre applique automatiquement.
+- **Confiance globale de l'extraction** (ÉLEVÉ / MOYEN / FAIBLE) — indique
+  la qualite des donnees disponibles dans le texte fourni. Cette confiance
+  n'affecte jamais le score : elle informe seulement l'utilisateur.
+
+Toujours aucune connexion a LinkedIn : le texte est colle a la main.
+L'entree (aujourd'hui un texte libre) est isolee dans une seule fonction
+(`extractFromText`) pour pouvoir etre remplacee plus tard par une source
+de donnees autorisee sans toucher au moteur.
+
 L'interface ne fait qu'appeler les memes moteurs que la CLI (via
 `src/server/api.js`, une couche de service partagee) : aucune regle metier
 n'a ete dupliquee ou modifiee pour la construire. Les donnees restent dans
@@ -135,6 +161,19 @@ Le catalogue complet des signaux disponibles (avec leurs libelles) est dans
   pays francophones prioritaires.
 - `config/pipeline.json` : liste des statuts valides.
 
+## Modifier les regles d'extraction de texte
+
+`config/extraction_patterns.json` liste, pour chaque signal existant
+(memes cles que `config/signals.json`), les expressions (regex simples,
+insensibles a la casse et aux accents) qui permettent de le detecter dans
+un texte colle, avec un niveau de confiance (`high`/`medium`/`low`).
+`apply_min_confidence` fixe, par categorie, le niveau minimal a partir
+duquel un signal detecte est realement applique (par defaut `medium` ;
+`high` uniquement pour `exclusion`, afin de ne jamais exclure un prospect
+sur une base ambigue). Ajouter une tournure de phrase que vos prospects
+utilisent souvent ne demande aucune modification du moteur d'extraction ni
+du moteur de scoring.
+
 ## Structure du projet
 
 ```
@@ -152,8 +191,9 @@ Le catalogue complet des signaux disponibles (avec leurs libelles) est dans
   analysis/        Orchestrateur (enchaine les moteurs) + formatage de sortie
   store/           Persistance JSON
   server/          api.js (couche de service partagee CLI/web) + server.js (HTTP natif)
+  extraction/      Extraction de signaux a partir d'un texte brut colle (V1.1)
   cli.js           Interface en ligne de commande
-/tests       Tests par moteur + scenarios de bout en bout (Tests A a G) + tests API/serveur
+/tests       Tests par moteur + scenarios de bout en bout (Tests A a G) + tests API/serveur/extraction
 /docs        architecture.md, assumptions.md
 ```
 
@@ -171,7 +211,16 @@ Le catalogue complet des signaux disponibles (avec leurs libelles) est dans
   l'historique, priorisation ;
 - un test d'integration HTTP (`tests/server/server.test.js`) qui demarre le
   vrai serveur sur un port ephemere et verifie la page HTML, l'API de
-  configuration, le cycle add→analyze→list→top en conditions reelles.
+  configuration, le cycle add→analyze→list→top en conditions reelles ;
+- les tests du moteur d'extraction (`tests/extraction/extraction.test.js`) :
+  aucune invention de signal, distinction confiance haute/moyenne (fait) vs
+  confiance faible (hypothese, non applique), exclusion reservee a la
+  confiance haute, detection du marche francophone via le pays ;
+- les 7 scenarios "texte brut" du cahier des charges V1.1
+  (`tests/server/analyze_text.test.js`), qui verifient que le texte colle
+  produit exactement les memes decisions (score, temperature, offre) que le
+  moteur existant, y compris un test explicite qui compare le resultat
+  "texte" et le resultat "formulaire manuel" sur les memes signaux.
 
 Les tests serveur utilisent un fichier de donnees temporaire
 (`PROSPECTS_FILE`) : ils ne touchent jamais a `data/prospects.json`.

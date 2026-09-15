@@ -96,6 +96,11 @@ export function createServer({ config = loadConfig() } = {}) {
         return sendJson(res, 200, api.addAndAnalyze(body, config));
       }
 
+      if (pathname === '/api/analyze-text' && req.method === 'POST') {
+        const body = await readBody(req);
+        return sendJson(res, 200, api.analyzeRawText(body, config));
+      }
+
       if (pathname === '/api/top' && req.method === 'GET') {
         const n = parseInt(url.searchParams.get('n') || '10', 10);
         return sendJson(res, 200, api.topProspectsList(Number.isFinite(n) ? n : 10));

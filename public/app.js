@@ -87,6 +87,7 @@ async function router() {
   try {
     await ensureConfig();
     if (route === 'nouveau') return renderNouveau();
+    if (route === 'extraction') return renderExtraction();
     if (route === 'pipeline') return renderPipeline();
     if (route === 'top') return renderTop();
     if (route === 'prospect' && param) return renderFiche(decodeURIComponent(param));
@@ -310,6 +311,128 @@ function renderResultCard(p) {
       <p>${ACTION_BADGE[p.action_recommandee] || ''}</p>
       <div class="kv"><div class="k">Pourquoi cette action ?</div><div class="v">${escapeHtml(p.justification_action || p.justification || '')}</div></div>
       <div class="kv"><div class="k">Prochaine action recommandee</div><div class="v">${escapeHtml(p.prochaine_action || 'Non identifie')}</div></div>
+    </div>`;
+}
+
+// ---------- Vue : Analyser un profil LinkedIn (texte brut -> extraction -> moteur existant) ----------
+
+const CONFIDENCE_LABEL = {
+  ELEVE: '<span class="badge badge-hot" style="background:#dcfce7; color:#15803d;">ÉLEVÉ</span>',
+  MOYEN: '<span class="badge badge-warm">MOYEN</span>',
+  FAIBLE: '<span class="badge badge-ignore">FAIBLE</span>'
+};
+
+function renderExtraction() {
+  app.innerHTML = `
+    <h1>🔍 Analyser un profil LinkedIn</h1>
+    <p class="page-subtitle">
+      Collez le contenu disponible sur le profil (description, experiences, derniers posts...).
+      Le moteur d'extraction detecte les signaux reellement presents dans le texte, puis les
+      transmet au meme moteur de qualification/scoring que le formulaire manuel — rien n'est
+      invente, et le bareme de scoring n'est jamais modifie par cette fonction.
+    </p>
+
+    <form id="extraction-form">
+      <div class="card">
+        <h2>Informations de base</h2>
+        <div class="grid-2">
+          <div class="field"><label>Prenom</label><input type="text" name="prenom" /></div>
+          <div class="field"><label>Nom</label><input type="text" name="nom" /></div>
+          <div class="field"><label>Entreprise</label><input type="text" name="entreprise" /></div>
+          <div class="field"><label>Pays</label><input type="text" name="pays" placeholder="France, Belgique, Suisse..." /></div>
+        </div>
+        <div class="field"><label>URL LinkedIn</label><input type="url" name="url_linkedin" placeholder="https://www.linkedin.com/in/..." /></div>
+      </div>
+
+      <div class="card">
+        <h2>Contenu brut</h2>
+        <div class="field">
+          <label>Collez ici les informations disponibles sur le profil LinkedIn</label>
+          <textarea name="texte_brut" rows="12" placeholder="Collez ici les informations disponibles sur le profil LinkedIn, la description, les experiences, les derniers posts ou tout autre contenu public pertinent.
+
+Exemple :
+Je suis coach business...
+J'accompagne...
+Depuis 2022...
+Je viens de lancer...
+Je cherche actuellement...
+Je n'ai plus le temps de...
+"></textarea>
+        </div>
+        <div class="warning-box">⚠️ Le moteur n'invente jamais un signal : chaque signal detecte devra etre justifie par une phrase reellement presente dans ce texte (visible ensuite dans "Pourquoi ?").</div>
+      </div>
+
+      <button type="submit" class="btn">🔍 Analyser un profil LinkedIn</button>
+      <span id="extraction-status" class="status-msg"></span>
+    </form>
+
+    <div id="extraction-result-container"></div>
+  `;
+
+  document.getElementById('extraction-form').addEventListener('submit', onSubmitExtraction);
+}
+
+async function onSubmitExtraction(event) {
+  event.preventDefault();
+  const form = event.target;
+  const statusEl = document.getElementById('extraction-status');
+  statusEl.textContent = 'Analyse en cours...';
+  statusEl.className = 'status-msg';
+
+  const formData = new FormData(form);
+  const payload = {
+    prenom: formData.get('prenom')?.trim() || '',
+    nom: formData.get('nom')?.trim() || '',
+    entreprise: formData.get('entreprise')?.trim() || '',
+    pays: formData.get('pays')?.trim() || undefined,
+    url_linkedin: formData.get('url_linkedin')?.trim() || '',
+    texte_brut: formData.get('texte_brut') || ''
+  };
+
+  try {
+    const result = await apiPost('/api/analyze-text', payload);
+    statusEl.textContent = result.isDuplicate
+      ? `Doublon detecte (${result.matchedOn}) — fiche existante mise a jour.`
+      : 'Profil analyse avec succes.';
+    statusEl.className = 'status-msg ok';
+    document.getElementById('extraction-result-container').innerHTML =
+      renderResultCard(result.prospect) + renderEvidenceSection(result.extraction);
+    document.getElementById('extraction-result-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    statusEl.textContent = `Erreur : ${err.message}`;
+    statusEl.className = 'status-msg error';
+  }
+}
+
+function renderEvidenceSection(extraction) {
+  const rows = (extraction.evidences || [])
+    .map(
+      (e) => `
+      <tr>
+        <td>${escapeHtml(e.label)}${e.applied ? '' : ' <span class="hint">(hypothese, non retenu)</span>'}</td>
+        <td>"${escapeHtml(e.evidence)}"</td>
+        <td>${escapeHtml(e.impact)}</td>
+      </tr>`
+    )
+    .join('');
+
+  return `
+    <div class="card">
+      <div class="result-header">
+        <h2>Pourquoi ce resultat ?</h2>
+        <span>Confiance globale de l'extraction : ${CONFIDENCE_LABEL[extraction.niveau_confiance_extraction] || ''}</span>
+      </div>
+      <p class="hint">La confiance ci-dessus decrit la qualite des donnees disponibles dans le texte colle — elle ne modifie jamais le score, calcule uniquement par le bareme existant.</p>
+      ${
+        rows
+          ? `<div style="overflow-x:auto;">
+              <table>
+                <thead><tr><th>Signal</th><th>Preuve (extraite du texte)</th><th>Impact</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>`
+          : `<div class="empty-state">Aucun signal detecte dans le texte fourni — rien n'a ete invente. Completez le texte ou les signaux manuellement dans "Nouveau prospect".</div>`
+      }
     </div>`;
 }
 

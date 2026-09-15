@@ -17,6 +17,7 @@ export function loadConfig() {
     offers: loadJson('offers.json'),
     signals: loadJson('signals.json'),
     thresholds: loadJson('thresholds.json'),
-    pipeline: loadJson('pipeline.json')
+    pipeline: loadJson('pipeline.json'),
+    extraction: loadJson('extraction_patterns.json')
   };
 }

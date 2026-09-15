@@ -111,10 +111,51 @@ recupere le catalogue de signaux, le bareme et les offres via `/api/config`
 (qui relit directement les fichiers de `/config`), et se contente de les
 afficher et de les envoyer a l'API au moment de l'analyse.
 
-## Ce qui n'est PAS construit en V1 (volontairement)
+## Extraction de signaux a partir d'un texte brut (V1.1)
+
+`src/extraction/index.js` transforme un texte colle par l'utilisateur en
+signaux structures, sans faire ni scoring ni qualification. C'est un moteur
+a base de regles (regex sur `config/extraction_patterns.json`), pas une IA
+generative : deterministe, auditable, et sans appel externe. Il ne connait
+rien du bareme de scoring — il produit uniquement des booleens `signals`
+(meme structure que ceux coches a la main dans le formulaire), des preuves
+litterales (`evidences`), et une confiance globale d'extraction, qui reste
+purement informative.
+
+Regles de fonctionnement :
+- **Jamais d'invention.** Un signal n'est retenu que si une regex trouve une
+  phrase reelle dans le texte fourni ; cette phrase devient la preuve.
+- **Confiance haute/moyenne -> signal applique (fait).** La phrase alimente
+  `faits_observes` et le booleen `signals.<categorie>.<cle>` passe a `true`.
+- **Confiance faible -> hypothese, signal NON applique.** La phrase alimente
+  `hypotheses` (formulee comme "a confirmer"), mais ne force pas le booleen
+  a `true` : ca respecte la meme regle que le reste du projet ("ne jamais
+  transformer une hypothese en fait", section 6 du brief V1).
+- **Exclusion reservee a la confiance haute** (`apply_min_confidence.exclusion
+  = "high"` dans `config/extraction_patterns.json`) : un texte ambigu ne peut
+  jamais faire passer un prospect en IGNORE tout seul.
+- **`marche_francophone`** est deduit du champ `pays` (correspondance
+  litterale avec `config/icp.json`), pas du texte libre — c'est une donnee
+  structuree, pas une interpretation.
+
+`src/server/api.js` expose `analyzeRawText(input, config, filePath)` qui
+appelle `extractFromText()` PUIS reutilise `addAndAnalyze()` tel quel (donc
+`qualify` -> `calculateScore` -> `determineTemperature` -> `matchOffer`,
+tous inchanges). Le flux est : texte brut -> extraction -> qualification
+existante -> scoring existant -> temperature existante -> offre existante ->
+action existante. Aucune regle de scoring n'a ete dupliquee ou modifiee pour
+cette fonctionnalite.
+
+`analyzeRawText` reste isole : remplacer demain "texte colle a la main" par
+une source de donnees autorisee, une integration, ou Claude Cowork ne
+demandera de changer que la fonction qui produit `{ text, pays }` en entree
+de `extractFromText` — le moteur d'extraction et le moteur de scoring restent
+inchanges.
+
+## Ce qui n'est PAS construit en V1 / V1.1 (volontairement)
 
 - Aucune connexion a LinkedIn (scraping, automatisation, API).
 - Aucune integration CRM / Notion / Sheets (prevu pour V2, voir section 23).
-- Aucune IA generative pour transformer un profil brut en signaux : en V1,
-  les signaux sont saisis a la main (ou via un script d'import qu'on peut
-  brancher plus tard sur `src/schema/prospect.js`).
+- Aucune IA generative (LLM, API externe) pour l'extraction de signaux : le
+  moteur d'extraction est a base de regles explicites et modifiables
+  (`config/extraction_patterns.json`), pas un modele de langage.

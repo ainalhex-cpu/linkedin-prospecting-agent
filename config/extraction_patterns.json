@@ -1,0 +1,163 @@
+{
+  "description": "Regles d'extraction (mots-cles / expressions) utilisees par src/extraction pour transformer un texte brut colle par l'utilisateur en signaux structures. Chaque regle produit un signal UNIQUEMENT si son 'pattern' (regex, insensible a la casse) est trouve litteralement dans le texte : rien n'est invente. 'confidence' indique la force du signal linguistique (high/medium/low), pas une decision de score — le score reste entierement calcule par src/scoring (inchange). Modifiable sans toucher au code d'extraction.",
+  "apply_min_confidence": {
+    "fit": "medium",
+    "maturite": "medium",
+    "probleme": "medium",
+    "intention": "medium",
+    "contexte": "medium",
+    "exclusion": "high"
+  },
+  "categories": {
+    "fit": {
+      "coach_business_entrepreneuriat": [
+        { "pattern": "coach\\s+(business|entrepreneur(ial)?|professionnel)", "confidence": "high" },
+        { "pattern": "j'accompagne\\s+(les\\s+)?entrepreneurs", "confidence": "high" },
+        { "pattern": "j'aide\\s+(les\\s+)?entrepreneurs", "confidence": "medium" },
+        { "pattern": "coach\\s+en\\s+entrepreneuriat", "confidence": "high" }
+      ],
+      "activite_etablie": [
+        { "pattern": "depuis\\s+\\d{4}\\b", "confidence": "high" },
+        { "pattern": "depuis\\s+(\\d+|plusieurs)\\s+ans?\\b", "confidence": "high" },
+        { "pattern": "mes\\s+clients\\s+me\\s+suivent", "confidence": "medium" }
+      ],
+      "marche_francophone": []
+    },
+    "maturite": {
+      "offre_commercialisee": [
+        { "pattern": "(mon|un)\\s+programme\\s+d'accompagnement", "confidence": "high" },
+        { "pattern": "mon\\s+accompagnement", "confidence": "high" },
+        { "pattern": "ma\\s+formation", "confidence": "high" },
+        { "pattern": "j'ai\\s+lance\\s+(mon|une)\\s+(programme|offre|formation)", "confidence": "high" },
+        { "pattern": "je\\s+propose\\s+(un|une)\\s+(programme|accompagnement|formation)", "confidence": "medium" }
+      ],
+      "clients_audience_etablis": [
+        { "pattern": "mes\\s+clients", "confidence": "medium" },
+        { "pattern": "ma\\s+communaute", "confidence": "medium" },
+        { "pattern": "mes\\s+abonnes", "confidence": "medium" },
+        { "pattern": "followers", "confidence": "medium" }
+      ],
+      "croissance_visible": [
+        { "pattern": "forte\\s+croissance", "confidence": "high" },
+        { "pattern": "croissance\\s+rapide", "confidence": "high" },
+        { "pattern": "grandit\\s+vite", "confidence": "medium" },
+        { "pattern": "mon\\s+activite\\s+explose", "confidence": "medium" },
+        { "pattern": "en\\s+pleine\\s+croissance", "confidence": "high" }
+      ],
+      "delegation_equipe_prestataires": [
+        { "pattern": "mon\\s+equipe", "confidence": "high" },
+        { "pattern": "mes\\s+prestataires", "confidence": "high" },
+        { "pattern": "mon\\s+assistant(e)?", "confidence": "high" },
+        { "pattern": "j'ai\\s+recrute", "confidence": "medium" }
+      ]
+    },
+    "probleme": {
+      "manque_de_temps": [
+        { "pattern": "je\\s+n'ai\\s+plus\\s+le\\s+temps", "confidence": "high" },
+        { "pattern": "je\\s+manque\\s+de\\s+temps", "confidence": "high" },
+        { "pattern": "plus\\s+le\\s+temps\\s+de", "confidence": "medium" }
+      ],
+      "communication": [
+        { "pattern": "je\\s+ne\\s+poste\\s+plus", "confidence": "high" },
+        { "pattern": "presence\\s+(sur\\s+linkedin\\s+)?(est\\s+)?(tres\\s+)?irreguliere", "confidence": "high" },
+        { "pattern": "je\\s+ne\\s+communique\\s+plus", "confidence": "high" },
+        { "pattern": "creer\\s+du\\s+contenu", "confidence": "medium" },
+        { "pattern": "rester\\s+regulier\\s+sur\\s+linkedin", "confidence": "medium" }
+      ],
+      "organisation": [
+        { "pattern": "organisation\\s+(est\\s+)?(completement\\s+)?chaotique", "confidence": "high" },
+        { "pattern": "aucun\\s+processus", "confidence": "high" },
+        { "pattern": "pas\\s+de\\s+processus", "confidence": "high" },
+        { "pattern": "je\\s+perds\\s+du\\s+temps\\s+dans\\s+l'administratif", "confidence": "medium" }
+      ],
+      "operations": [
+        { "pattern": "les\\s+relances\\s+me\\s+prennent", "confidence": "high" },
+        { "pattern": "trop\\s+de\\s+taches\\s+(administratives|repetitives)", "confidence": "high" },
+        { "pattern": "gerer\\s+les\\s+details", "confidence": "medium" }
+      ],
+      "experience_client": [
+        { "pattern": "suivi\\s+(de\\s+mes\\s+)?client", "confidence": "high" },
+        { "pattern": "je\\s+n'arrive\\s+plus\\s+a\\s+suivre\\s+mes\\s+clients", "confidence": "high" },
+        { "pattern": "mes\\s+clients\\s+attendent", "confidence": "medium" }
+      ],
+      "besoin_delegation": [
+        { "pattern": "j'ai\\s+besoin\\s+de\\s+deleguer", "confidence": "high" },
+        { "pattern": "besoin\\s+de\\s+deleguer", "confidence": "high" },
+        { "pattern": "je\\s+dois\\s+deleguer", "confidence": "medium" },
+        { "pattern": "alleger\\s+ma\\s+charge", "confidence": "medium" }
+      ]
+    },
+    "intention": {
+      "delegation_explicitement_recherchee": [
+        { "pattern": "je\\s+cherche\\s+a\\s+deleguer", "confidence": "high" },
+        { "pattern": "je\\s+veux\\s+deleguer", "confidence": "high" },
+        { "pattern": "deleguer\\s+une\\s+(vraie\\s+)?partie\\s+de\\s+mon\\s+activite", "confidence": "high" },
+        { "pattern": "je\\s+souhaite\\s+deleguer", "confidence": "high" }
+      ],
+      "recrutement": [
+        { "pattern": "je\\s+recrute", "confidence": "high" },
+        { "pattern": "nous\\s+recrutons", "confidence": "high" },
+        { "pattern": "je\\s+cherche\\s+a\\s+recruter", "confidence": "high" },
+        { "pattern": "offre\\s+d'emploi", "confidence": "high" },
+        { "pattern": "rejoindre\\s+mon\\s+equipe", "confidence": "medium" }
+      ],
+      "recherche_aide_prestataire": [
+        { "pattern": "je\\s+cherche\\s+(une\\s+personne|quelqu'un|un\\s+prestataire|une\\s+aide)", "confidence": "high" },
+        { "pattern": "a\\s+la\\s+recherche\\s+d'(un|une)\\s+(assistant|freelance|prestataire)", "confidence": "high" },
+        { "pattern": "pour\\s+m'aider\\s+(a|dans)", "confidence": "medium" }
+      ],
+      "croissance_importante_lancement": [
+        { "pattern": "je\\s+viens\\s+de\\s+lancer", "confidence": "high" },
+        { "pattern": "je\\s+lance\\s+(bientot|actuellement)", "confidence": "high" },
+        { "pattern": "nouveau\\s+programme", "confidence": "medium" },
+        { "pattern": "nouvelle\\s+offre", "confidence": "medium" }
+      ]
+    },
+    "contexte": {
+      "plusieurs_offres": [
+        { "pattern": "plusieurs\\s+(offres|programmes)", "confidence": "high" },
+        { "pattern": "mes\\s+differentes\\s+offres", "confidence": "high" }
+      ],
+      "forte_croissance": [
+        { "pattern": "forte\\s+croissance", "confidence": "high" },
+        { "pattern": "croissance\\s+rapide", "confidence": "high" }
+      ],
+      "lancements_reguliers": [
+        { "pattern": "je\\s+lance\\s+regulierement", "confidence": "high" },
+        { "pattern": "chaque\\s+mois\\s+je\\s+lance", "confidence": "high" },
+        { "pattern": "nouveau\\s+lancement", "confidence": "medium" }
+      ],
+      "equipe_ou_prestataires": [
+        { "pattern": "mon\\s+equipe", "confidence": "high" },
+        { "pattern": "mes\\s+prestataires", "confidence": "high" },
+        { "pattern": "mon\\s+assistant(e)?", "confidence": "high" }
+      ],
+      "besoin_coordination": [
+        { "pattern": "je\\s+dois\\s+tout\\s+coordonner", "confidence": "high" },
+        { "pattern": "jongler\\s+entre\\s+plusieurs\\s+projets", "confidence": "high" }
+      ]
+    },
+    "exclusion": {
+      "debutant": [
+        { "pattern": "je\\s+debute\\s+(tout\\s+juste\\s+)?", "confidence": "high" },
+        { "pattern": "je\\s+viens\\s+de\\s+commencer", "confidence": "high" },
+        { "pattern": "je\\s+me\\s+lance\\s+tout\\s+juste", "confidence": "high" }
+      ],
+      "aucune_offre": [
+        { "pattern": "je\\s+n'ai\\s+pas\\s+encore\\s+d'offre", "confidence": "high" },
+        { "pattern": "je\\s+n'ai\\s+pas\\s+(encore\\s+)?de\\s+programme", "confidence": "high" },
+        { "pattern": "pas\\s+encore\\s+de\\s+service\\s+payant", "confidence": "high" }
+      ],
+      "activite_inactive": [
+        { "pattern": "je\\s+n'ai\\s+plus\\s+publie\\s+depuis", "confidence": "high" },
+        { "pattern": "activite\\s+(est\\s+)?en\\s+pause", "confidence": "high" },
+        { "pattern": "je\\s+suis\\s+en\\s+pause", "confidence": "high" }
+      ],
+      "hors_cible": [],
+      "sans_capacite_delegation": [],
+      "mauvais_marche": [],
+      "profil_trop_eloigne": [],
+      "informations_insuffisantes": []
+    }
+  }
+}

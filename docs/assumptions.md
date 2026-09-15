@@ -101,3 +101,46 @@ modifiables via `/config` sans toucher au code.
    (a la main ou via un import structure), avec les champs `faits_observes`/
    `hypotheses` pour tracer le raisonnement humain. Ce point pourra etre
    reetudie en V2 avec une supervision humaine systematique.
+
+   *Mise a jour V1.1* : ce point reste vrai pour le scoring/la qualification
+   (toujours calcules par les memes moteurs deterministes, jamais par une
+   IA). L'extraction de SIGNAUX depuis un texte colle a ete automatisee,
+   mais via un moteur a base de regles explicites et auditables
+   (`config/extraction_patterns.json`), pas via un LLM ou une API externe —
+   voir points 13-16 ci-dessous.
+
+13. **Extraction par regles (regex) plutot que par IA/LLM.** Le brief V1.1
+    demandait explicitement de ne pas connecter LinkedIn ni d'API externe.
+    Un moteur base sur des expressions regulieres explicites reste
+    deterministe (memes entrees -> memes signaux, toujours), modifiable sans
+    toucher au code (`config/extraction_patterns.json`), et ne peut jamais
+    halluciner un signal absent du texte. Contrepartie assumee : il ne
+    comprend que les tournures de phrase couvertes par ses regles ; un texte
+    formule tres differemment peut ne rien detecter. C'est un choix
+    delibere de fiabilite/auditabilite plutot que de couverture maximale
+    pour cette V1.1, ajustable en enrichissant le fichier de patterns.
+
+14. **Seuil de confiance minimal par categorie
+    (`apply_min_confidence` dans `config/extraction_patterns.json`).** Un
+    signal detecte avec une regle `high` ou `medium` est applique (devient
+    un fait, alimente le score) ; un signal `low` reste une hypothese non
+    appliquee. Exception : la categorie `exclusion` exige `high` partout,
+    pour qu'un texte ambigu ne puisse jamais faire basculer un prospect en
+    IGNORE tout seul (l'exclusion reste la decision la plus consequente du
+    systeme). Ce seuil est modifiable dans la config sans toucher au code.
+
+15. **Champs texte deduits (`type_prospect`, `activite`, `offre`,
+    `audience`) uniquement a partir de citations litterales.** Quand le
+    moteur d'extraction remplit ces champs, il reutilise mot pour mot la
+    phrase du texte source qui a declenche le signal correspondant (jamais
+    une reformulation ou un resume) ; les valeurs saisies explicitement par
+    l'utilisateur dans le formulaire restent toujours prioritaires sur
+    celles deduites du texte.
+
+16. **Confiance globale de l'extraction : heuristique simple, additive.**
+    `computeGlobalConfidence` (dans `src/extraction/index.js`) classe
+    l'extraction ÉLEVÉ des qu'au moins deux signaux de confiance haute sont
+    appliques, MOYEN avec un signal haute confiance ou deux signaux moyenne
+    confiance, FAIBLE sinon (y compris quand rien n'est detecte). C'est une
+    indication qualitative pour l'utilisateur, pas une note qui entre dans
+    le score /100.

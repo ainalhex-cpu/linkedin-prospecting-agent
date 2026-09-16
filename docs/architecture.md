@@ -229,11 +229,88 @@ en briefing quotidien groupe par priorite.
 Voir `docs/assumptions.md` pour le detail des choix de conception (le
 bucket `A_VERIFIER`, la matrice de priorite, le seuil de recence, etc.).
 
-## Ce qui n'est PAS construit en V1 / V1.1 / V2 (volontairement)
+## V3 : Discovery Engine (decouverte automatique, phase 1 web)
+
+La V3 remplace "je choisis un prospect dans une liste mock figee" par "le
+systeme cherche lui-meme des candidats", en gardant l'invariant central du
+projet : **le moteur V1/V2 (qualification/scoring/temperature/offer_matching/
+opportunite/priorite) ne change pas**. Seule la maniere dont on obtient un
+`raw prospect` en entree du pipeline evolue.
+
+```
+DiscoverySource.discoverProspects(criteria) -> { candidates, stats, eliminated }
+        |
+        v
+normalizeDiscoveryInput() (src/server/api.js) -- adapte candidat -> input analyzeProspectV2
+        |
+        v
+analyzeProspectV2() (V2, INCHANGEE) -> qualification/scoring/temperature/offre/action existants
+        |
+        v
+opportunity/priority/actions (V2, INCHANGES)
+```
+
+**`src/discovery/` a une interface commune** :
+`{ name, discoverProspects(criteria) -> { candidates, stats, eliminated } }`.
+
+- `mock.js` : la source V2, verbatim (aucun changement de comportement,
+  garantit la retro-compatibilite des tests V2 existants). Elle expose en
+  plus un wrapper `MockDiscoverySource` conforme a la nouvelle interface.
+- `web.js` : la nouvelle source "recherche". Decoupee en etapes pures et
+  testables independamment :
+  1. `buildSearchQueries(criteria, config.discoveryQueries)` — genere des
+     requetes `"mot-cle" Pays` a partir de templates configurables (jamais
+     codes en dur), avec priorite aux `keywords` explicites si fournis.
+  2. `MockWebSearchProvider.search(query)` — provider MOCK synchrone,
+     aucun reseau ; filtre un jeu d'environ 18 resultats fictifs geres en
+     memoire selon le mot-cle et le marche encodes dans la requete.
+  3. `extractCandidate(result, query)` — heuristique legere (regex) pour
+     identifier nom/entreprise/URL LinkedIn/site depuis title/snippet.
+     N'invente jamais : un champ non identifiable reste `null`.
+  4. `dedupeCandidates(candidates)` — fusionne par URL exacte > URL
+     LinkedIn > domaine > nom+entreprise (dans cet ordre de priorite),
+     en conservant la liste des requetes/sources/dates de chaque
+     occurrence sur le candidat canonique, et en combinant les preuves
+     textuelles (snippets) distinctes plutot que de n'en garder qu'une.
+  5. `preQualifyCandidate(candidate, config.discoveryPrequalification,
+     config.statut)` — elimine un candidat AVANT l'analyse semantique
+     complete, uniquement sur une preuve positive de non-pertinence
+     (absence de nom identifiable, contenu generique/listicle, profil
+     etudiant/debutant manifeste, hors sujet thematique, recrutement
+     salarie manifeste sans aucun vocabulaire d'independance). Ne bloque
+     jamais pour simple absence d'information.
+- `instagram.js` / `linkedin.js` : interfaces preparees, non implementees
+  (`discoverProspects` leve une erreur explicite). Documentent les
+  contraintes a respecter le jour ou elles seront construites (pas de
+  scraping, pas d'automatisation d'action, meme interface `DiscoverySource`,
+  reutiliser `web.js` pour extraction/dedup/pre-qualification).
+- `index.js` : `getDiscoverySource(name, config)` selectionne la source ;
+  `discoverProspects()` reste exporte tel quel pour la retro-compatibilite
+  V2 (defaut mock, tableau brut, comportement inchange).
+
+**`src/server/api.js#normalizeDiscoveryInput`** est le seul point d'adaptation
+entre le format "candidat de decouverte" (mock ou web, formats differents)
+et l'entree attendue par `analyzeProspectV2` (INCHANGEE) : separation
+prenom/nom, resolution du pays depuis les criteres de recherche si absent du
+candidat, conversion des sources de decouverte en chaines lisibles pour le
+champ `sources` (deja existant en V1). `runProspectingWorkflow` accepte
+maintenant `source` (mock/web) et transmet `type`/`profile_type` aux deux
+vocabulaires (V2 filtre exact, V3 templates de requetes) pour rester
+compatible avec n'importe quelle source.
+
+**Historique de decouverte** : `date_decouverte` (V1, inchange) sert de
+"premiere decouverte" (fixee a la creation). `derniere_decouverte` (nouveau
+champ additif) est mise a jour a chaque nouvelle decouverte du meme
+prospect, sans jamais toucher a `historique_score`/`historique_temperature`/
+`historique_priorite` deja enregistres.
+
+## Ce qui n'est PAS construit en V1 / V1.1 / V2 / V3 (volontairement)
 
 - Aucune connexion a LinkedIn (scraping, automatisation, API) : la
-  decouverte V2 est une source mock en memoire.
-- Aucune integration CRM / Notion / Sheets (prevu pour une V3 eventuelle).
+  decouverte V3 est une source "web" MOCK en memoire, aucun reseau.
+- Aucun scraping Instagram non plus : `src/discovery/instagram.js` est une
+  interface preparee, non implementee.
+- Aucune integration CRM / Notion / Sheets (prevu pour une V4 eventuelle).
 - Aucune IA generative (LLM, API externe) active : le moteur d'extraction et
   la couche semantique sont a base de regles explicites et modifiables
   (`config/extraction_patterns.json`, `config/statut_patterns.json`), pas un

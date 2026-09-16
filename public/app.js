@@ -748,25 +748,38 @@ async function renderFiche(id) {
   });
 }
 
-// ---------- Vue : Prospection du jour (V2 - workflow discover -> analyse -> priorite) ----------
+// ---------- Vue : Discovery (V3 - workflow discover -> analyse -> priorite) ----------
 
 function renderProspection() {
   app.innerHTML = `
-    <h1>📅 Prospection du jour</h1>
+    <h1>🔎 Discovery</h1>
     <p class="page-subtitle">
-      Lance le workflow V2 (source mock pour l'instant, aucune connexion LinkedIn) :
-      decouverte → deduplication → analyse semantique → qualification/scoring existants →
-      priorite. Le moteur de scoring reste inchange ; cette vue n'ajoute que la decouverte
-      et la priorisation.
+      Decouvre automatiquement des prospects (source web mock pour l'instant, aucune
+      connexion LinkedIn, aucun scraping) : recherche → extraction → deduplication →
+      pre-qualification → analyse semantique → qualification/scoring existants →
+      opportunite → priorite. Le moteur de scoring reste inchange.
     </p>
 
     <div class="card">
-      <h2>Analyser les nouveaux prospects</h2>
+      <h2>Lancer une decouverte</h2>
       <form id="prospection-form" class="grid-2">
-        <div class="field"><label>Pays (optionnel)</label><input type="text" name="country" placeholder="France, Belgique..." /></div>
+        <div class="field">
+          <label>Source</label>
+          <select name="source">
+            <option value="web">Web (recherche mock)</option>
+            <option value="mock">Mock (prospects deja qualifies, V2)</option>
+          </select>
+        </div>
+        <div class="field"><label>Pays / marche (optionnel)</label><input type="text" name="country" placeholder="France, Belgique, Suisse..." /></div>
+        <div class="field"><label>Type de profil</label>
+          <select name="type">
+            <option value="coach_business">Coach business</option>
+            <option value="formateur_independant">Formateur independant</option>
+          </select>
+        </div>
         <div class="field"><label>Limite</label><input type="text" name="limit" value="10" /></div>
       </form>
-      <button id="prospection-run" class="btn">🔎 Analyser les nouveaux prospects</button>
+      <button id="prospection-run" class="btn">🔎 Lancer la decouverte</button>
       <span id="prospection-status" class="status-msg"></span>
     </div>
 
@@ -777,15 +790,17 @@ function renderProspection() {
     const form = document.getElementById('prospection-form');
     const formData = new FormData(form);
     const statusEl = document.getElementById('prospection-status');
-    statusEl.textContent = 'Analyse en cours...';
+    statusEl.textContent = 'Decouverte en cours...';
     statusEl.className = 'status-msg';
 
     try {
       const result = await apiPost('/api/prospecting/run', {
+        source: formData.get('source') || 'web',
         country: formData.get('country')?.trim() || undefined,
+        type: formData.get('type') || undefined,
         limit: parseInt(formData.get('limit'), 10) || 10
       });
-      statusEl.textContent = `${result.stats.trouves} prospect(s) trouve(s), ${result.stats.nouveaux} nouveau(x), ${result.stats.doublons} doublon(s) mis a jour.`;
+      statusEl.textContent = `${result.stats.trouves} prospect(s) trouve(s) apres deduplication, ${result.stats.nouveaux} nouveau(x), ${result.stats.hors_cible_decouverte} ecarte(s) en pre-qualification.`;
       statusEl.className = 'status-msg ok';
       renderProspectionResult(result);
     } catch (err) {
@@ -806,29 +821,43 @@ function renderProspectionResult(result) {
         <td>${escapeHtml(p.probleme_principal || '—')}</td>
         <td>${escapeHtml(OFFER_LABELS[p.offre_recommandee] || p.offre_recommandee || '—')}</td>
         <td>${ACTION_BADGE[p.action_recommandee_v2 || p.action_recommandee] || '—'}</td>
+        <td><button class="btn secondary voir-fiche-btn" data-id="${escapeHtml(p.id)}" type="button">Voir la fiche</button></td>
       </tr>`
     )
     .join('');
 
   document.getElementById('prospection-result').innerHTML = `
     <div class="card">
-      <h2>Stats du run</h2>
-      <div class="score-grid">
-        <div class="score-tile"><div class="label">HOT</div><div class="value">${result.stats.HOT}</div></div>
-        <div class="score-tile"><div class="label">WARM</div><div class="value">${result.stats.WARM}</div></div>
-        <div class="score-tile"><div class="label">COLD</div><div class="value">${result.stats.COLD}</div></div>
-        <div class="score-tile"><div class="label">IGNORE</div><div class="value">${result.stats.IGNORE}</div></div>
+      <h2>Stats de la decouverte</h2>
+      <div class="grid-2">
+        <div class="kv"><div class="k">Requetes lancees</div><div class="v">${result.stats.requetes ?? '—'}</div></div>
+        <div class="kv"><div class="k">Resultats bruts</div><div class="v">${result.stats.resultats_bruts ?? '—'}</div></div>
+        <div class="kv"><div class="k">Doublons (recherche)</div><div class="v">${result.stats.doublons_recherche ?? 0}</div></div>
+        <div class="kv"><div class="k">Hors cible (pre-qualification)</div><div class="v">${result.stats.hors_cible_decouverte ?? 0}</div></div>
+      </div>
+      <div class="score-grid" style="margin-top:14px;">
+        <div class="score-tile"><div class="label">Priorite A</div><div class="value">${result.stats.priorite?.A ?? 0}</div></div>
+        <div class="score-tile"><div class="label">Priorite B</div><div class="value">${result.stats.priorite?.B ?? 0}</div></div>
+        <div class="score-tile"><div class="label">Priorite C</div><div class="value">${result.stats.priorite?.C ?? 0}</div></div>
+        <div class="score-tile"><div class="label">Ignores</div><div class="value">${result.stats.priorite?.IGNORE ?? 0}</div></div>
       </div>
     </div>
     <div class="card">
-      <h2>Nouveaux prospects analyses</h2>
+      <h2>Prospects analyses</h2>
       ${
         rows
-          ? `<div style="overflow-x:auto;"><table><thead><tr><th>Nom</th><th>Priorite</th><th>Temperature</th><th>Besoin</th><th>Offre</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`
-          : `<div class="empty-state">Aucun prospect.</div>`
+          ? `<div style="overflow-x:auto;"><table><thead><tr><th>Nom</th><th>Priorite</th><th>Temperature</th><th>Besoin</th><th>Offre</th><th>Action</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
+          : `<div class="empty-state">Aucun prospect pertinent trouve pour ces criteres.</div>`
       }
     </div>
   `;
+
+  document.querySelectorAll('#prospection-result .voir-fiche-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.location.hash = `#/prospect/${encodeURIComponent(btn.dataset.id)}`;
+    });
+  });
 
   document.querySelectorAll('#prospection-result tbody tr').forEach((tr) => {
     tr.addEventListener('click', () => {

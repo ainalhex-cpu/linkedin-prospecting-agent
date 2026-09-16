@@ -20,6 +20,8 @@ export function loadConfig() {
     pipeline: loadJson('pipeline.json'),
     extraction: loadJson('extraction_patterns.json'),
     statut: loadJson('statut_patterns.json'),
-    intentLevels: loadJson('intent_levels.json')
+    intentLevels: loadJson('intent_levels.json'),
+    discoveryQueries: loadJson('discovery_queries.json'),
+    discoveryPrequalification: loadJson('discovery_prequalification.json')
   };
 }

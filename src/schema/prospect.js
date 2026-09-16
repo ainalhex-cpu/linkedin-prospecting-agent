@@ -137,6 +137,12 @@ export function createProspect(input = {}) {
     justification_action_v2: input.justification_action_v2 || null,
     comment_suggere: input.comment_suggere || null,
     message_suggere: input.message_suggere || null,
-    derniere_analyse_v2: input.derniere_analyse_v2 || null
+    derniere_analyse_v2: input.derniere_analyse_v2 || null,
+
+    // V3 - decouverte (src/discovery). `date_decouverte` (ci-dessus) sert
+    // deja de "premiere decouverte" (fixee a la creation, jamais modifiee).
+    // `derniere_decouverte` est mise a jour a chaque nouvelle decouverte du
+    // meme prospect (section 17 du brief V3), sans jamais ecraser l'historique.
+    derniere_decouverte: input.derniere_decouverte || null
   };
 }

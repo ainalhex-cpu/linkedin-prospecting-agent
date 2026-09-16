@@ -1,0 +1,31 @@
+{
+  "description": "Templates de mots-cles de recherche par type de profil (section 3 du brief V3). Combines automatiquement avec le pays/marche au moment de la recherche par src/discovery/web.js#buildSearchQueries. Modifiable sans toucher au code du moteur de decouverte.",
+  "templates": {
+    "coach_business": [
+      "coach business",
+      "coach entrepreneuriat",
+      "coach dirigeants",
+      "coach leadership",
+      "coach executive independant"
+    ],
+    "formateur_independant": [
+      "formateur independant",
+      "expert formation",
+      "consultant formateur",
+      "mentor entrepreneurs",
+      "accompagnateur d'entrepreneurs"
+    ]
+  },
+  "default_profile_type": "coach_business",
+  "marches_francophones": [
+    "France",
+    "Belgique",
+    "Suisse",
+    "Canada francophone",
+    "Luxembourg",
+    "Maroc",
+    "Tunisie",
+    "Senegal",
+    "Cote d'Ivoire"
+  ]
+}

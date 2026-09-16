@@ -1,0 +1,20 @@
+{
+  "description": "Heuristiques de pre-qualification (section 7 du brief V3). Elimine un candidat AVANT l'analyse semantique complete, uniquement sur une preuve positive de non-pertinence. Ne doit JAMAIS eliminer pour simple absence d'information : 'inconnu' != 'hors cible'. Modifiable sans toucher au code du moteur de decouverte.",
+  "generic_content_title_patterns": [
+    "top\\s+\\d+",
+    "meilleurs?\\s+",
+    "classement",
+    "guide\\s+(complet|ultime)",
+    "comparatif"
+  ],
+  "student_or_beginner_patterns": [
+    "etudiant(e)?\\s+en",
+    "en\\s+formation\\s+initiale",
+    "stage\\s+de\\s+fin\\s+d'etudes",
+    "je\\s+debute",
+    "premiere\\s+annee",
+    "a\\s+la\\s+recherche\\s+de\\s+mon\\s+premier\\s+emploi"
+  ],
+  "off_topic_keywords": ["restaurant", "recette", "boutique en ligne", "menu du jour", "boulangerie", "agence immobiliere", "bien immobilier"],
+  "relevant_topic_keywords": ["coach", "formateur", "formatrice", "consultant", "entrepreneur", "dirigeant", "accompagne", "accompagnement", "formation", "mentor"]
+}

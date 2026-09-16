@@ -223,3 +223,93 @@ modifiables via `/config` sans toucher au code.
     scenarios de test requis (section 23) et servent de demonstration du
     workflow complet. Remplacer cette source par une API autorisee plus
     tard ne touche que `src/discovery/index.js`.
+
+## V3 — Discovery Engine (decouverte automatique, phase 1 web)
+
+25. **`mock.js` conserve intact, `web.js` en module separe plutot qu'une
+    evolution du meme fichier.** Le brief (section 1) demande une
+    architecture a sources interchangeables sans casser l'existant. Plutot
+    que de faire evoluer le mock V2 vers un format "recherche", il a ete
+    laisse tel quel (memes exports, memes tests V2 qui passent sans
+    modification) et la nouvelle logique de recherche/dedup/pre-qualification
+    a ete ecrite dans un module a part (`src/discovery/web.js`). Cout :
+    un peu de duplication conceptuelle (deux mini-jeux de donnees mock) ;
+    benefice : zero risque de regression sur les 71+52 tests V1/V1.1/V2 deja
+    verts, et une source `web` qui peut evoluer independamment (voire etre
+    supprimee) sans toucher `mock.js`.
+
+26. **Interface `DiscoverySource` unifiee a `{candidates, stats, eliminated}`
+    pour TOUTES les sources, y compris `mock`.** Une lecture stricte de la
+    section 1 du brief ("candidates" en sortie) aurait suffi pour un simple
+    tableau. Mais les sections 14 et 16 exigent des compteurs
+    (resultats trouves / doublons / hors cible / analyses) affiches par la
+    CLI et l'interface — impossibles a produire sans que la source elle-meme
+    les calcule (elle seule connait le nombre de doublons fusionnes et de
+    candidats pre-qualifies-hors-cible avant l'analyse semantique).
+    Decision : enrichir l'interface commune plutot que de recalculer ces
+    stats en dehors de la source. La fonction historique `discoverProspects()`
+    de `mock.js` (tableau brut) reste exportee telle quelle a cote du nouveau
+    `MockDiscoverySource`, pour ne rien casser des appels V2 existants.
+
+27. **`preQualifyCandidate` : liste explicite de statuts "independants"
+    (`INDEPENDANT_STATUT_KEYS`) plutot que "tous les patterns de statut sauf
+    exclusion".** Premiere version bugguee : `Object.values(statut_professionnel)
+    .flat()` incluait aussi les patterns `salarie` eux-memes, donc une offre
+    d'emploi ("poste en alternance avec conversion CDI") matchait son PROPRE
+    marqueur salarie et etait a tort consideree comme ayant "du vocabulaire
+    independant", ce qui l'empechait d'etre eliminee. Corrige en listant
+    explicitement les cles a considerer comme vocabulaire d'independance
+    (fondateur, dirigeant, coach_independant, formateur_independant,
+    consultant_independant, independant) — une liste positive plutot qu'une
+    negation, plus sure et plus lisible.
+
+28. **Pre-qualification stricte sur preuve positive de hors-sujet, jamais sur
+    absence d'info ("inconnu != hors cible", section 7).** Un candidat avec
+    juste un nom et "Coach business." en snippet (peu de details) est
+    CONSERVE pour l'analyse semantique complete, qui pourra le classer
+    `A_VERIFIER` si besoin (point 17). La pre-qualification n'elimine que sur
+    un signal explicite de non-pertinence (aucun nom identifiable, contenu
+    generique/listicle, etudiant/debutant manifeste, recrutement salarie
+    manifeste sans aucun vocabulaire independant, hors sujet thematique) —
+    jamais par defaut. C'est deliberement une passoire a larges mailles :
+    le vrai filtre reste le moteur de qualification V1/V2 en aval.
+
+29. **Fusion des `snippet` distincts lors de la deduplication, plutot que de
+    ne garder que la premiere occurrence.** Un meme prospect trouve via son
+    profil LinkedIn ET son site personnel apporte souvent des preuves
+    complementaires (ex: LinkedIn mentionne le statut, le site mentionne la
+    duree du programme d'accompagnement). Ne garder que le premier snippet
+    aurait perdu des preuves qui changent la qualification ICP en aval
+    (voir point 17 : sans la preuve d'activite propre, un profil reste
+    `A_VERIFIER` au lieu d'`ICP_PRINCIPAL`). `dedupeCandidates` concatene
+    donc les snippets distincts sur le candidat fusionne, en conservant
+    l'integralite des preuves textuelles disponibles.
+
+30. **Extraction de candidat biaisee vers un texte a la premiere personne
+    (limite assumee).** Les regex d'extraction (`extractCandidate`) sont
+    calquees sur le style d'un profil LinkedIn ("je suis coach depuis...",
+    "j'accompagne..."), car c'est le style dominant des bios LinkedIn deja
+    traitees en V1.1. Un extrait de recherche web redige a la troisieme
+    personne ("Alec Mercier est coach...") peut ne rien extraire. C'est une
+    limite documentee plutot qu'un jeu de regex parallele : construire un
+    second ensemble de patterns pour la troisieme personne aurait ajoute de
+    la complexite sans preuve que les vrais moteurs de recherche renvoient
+    majoritairement ce style — a rouvrir si l'usage reel montre le contraire.
+
+31. **`npm run prospect` reste sur la source `mock` par defaut, `npm run
+    discover` bascule sur `web` par defaut.** Les deux commandes appellent le
+    meme `runProspectingWorkflow`, seul le parametre `source` differe. Choix :
+    ne pas changer le comportement par defaut d'une commande V2 deja
+    existante (`prospect`) pour ne rien casser silencieusement pour un usage
+    scripte pre-existant ; la nouvelle commande `discover` (section 14 du
+    brief V3) est le point d'entree naturel pour la nouvelle source web.
+
+32. **`derniere_decouverte` : un seul nouveau champ, `date_decouverte` (V1)
+    reutilise comme "premiere decouverte".** Le brief (section 17) demande de
+    conserver date de premiere ET derniere decouverte. Plutot que d'ajouter
+    deux nouveaux champs (risque de redondance avec le `date_decouverte`
+    deja existant depuis la V1, qui n'est deja ecrit qu'une seule fois a la
+    creation et jamais modifie), un seul champ additif `derniere_decouverte`
+    a ete ajoute, mis a jour a chaque nouvelle decouverte du meme prospect
+    (dedupe applicative dans `analyzeProspectV2`, meme logique que la
+    deduplication V1 par URL/nom+entreprise).

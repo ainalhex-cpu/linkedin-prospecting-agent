@@ -174,6 +174,123 @@ pour brancher plus tard un modele de langage. Aujourd'hui : implementation
 MOCK uniquement, aucun appel reseau, aucune cle API dans le depot. Utiliser
 un vrai provider est une decision explicite a prendre plus tard.
 
+## V3 — Discovery Engine (decouverte automatique, phase 1 : web)
+
+La V3 fait passer la decouverte de "je choisis un prospect deja qualifie
+dans une liste mock" a "le systeme cherche lui-meme des candidats sur le
+web". **Toujours aucune connexion LinkedIn, aucun scraping (ni LinkedIn ni
+Instagram), aucun envoi de message/commentaire/demande de connexion.**
+
+### Architecture a sources interchangeables
+
+`src/discovery/` expose une interface commune `DiscoverySource` :
+
+```
+{ name, discoverProspects(criteria) -> { candidates, stats, eliminated } }
+```
+
+- `src/discovery/mock.js` — la source V2 (jeu de donnees fixe), inchangee,
+  gardee pour la retro-compatibilite (`discoverProspects()` reste exporte
+  tel quel).
+- `src/discovery/web.js` — nouvelle source "recherche" : genere des
+  requetes a partir de criteres (`config/discovery_queries.json`, jamais
+  codees en dur), interroge un `WebSearchProvider` (MOCK ici,
+  `search(query) -> [{title,url,snippet,source}]`, aucun reseau), extrait
+  des candidats structures, les deduplique (URL exacte > URL LinkedIn >
+  domaine > nom+entreprise, en conservant requetes/sources/dates), puis
+  elimine les candidats manifestement hors sujet AVANT l'analyse complete
+  (`config/discovery_prequalification.json`) — jamais pour simple absence
+  d'information ("inconnu" != "hors cible").
+- `src/discovery/instagram.js` et `src/discovery/linkedin.js` — interfaces
+  preparees, **non implementees** : elles levent une erreur explicite si
+  appelees. Le jour ou elles seront construites, elles devront respecter la
+  meme interface `DiscoverySource` et reutiliser l'extraction/dedup/
+  pre-qualification de `web.js`.
+- `src/discovery/index.js` — `getDiscoverySource(name, config)` choisit la
+  source active (`mock`, `web`, ou les sources preparees). Le reste du
+  pipeline (analyse semantique, qualification/scoring/temperature/offre
+  existants, opportunite, priorite) est strictement identique quelle que
+  soit la source.
+
+### Pipeline complet
+
+```
+DISCOVER (mock|web) -> RAW DATA -> SEMANTIC ANALYSIS -> QUALIFICATION ->
+SCORING -> OPPORTUNITY -> PRIORITY -> ACTION -> PIPELINE (+ BRIEFING)
+```
+
+`src/server/api.js#runProspectingWorkflow({ source, country, market,
+profile_type, keywords, limit })` orchestre ce pipeline en reutilisant tel
+quel tout ce qui existait deja (V1/V2) : aucun second moteur de scoring.
+`getDailyProspects(limit, options)` retourne les meilleurs candidats
+operationnels **sans jamais remplir artificiellement la liste** — s'il n'y
+a que 4 prospects pertinents, elle en retourne 4.
+
+### Lancer Discovery
+
+```bash
+npm run discover
+node src/cli.js discover -- --country France --type coach_business --limit 10 --source web
+```
+
+Affiche (section 14 du brief V3) :
+
+```
+# DISCOVERY
+
+Resultats trouves : X
+Doublons : X
+Hors cible : X
+Analyses : X
+A : X
+B : X
+C : X
+IGNORE : X
+
+## TOP PROSPECTS
+
+1. Nom
+   Score / Priorite / Besoin / Offre / Pourquoi maintenant / Source
+```
+
+### Briefing
+
+`npm run briefing` reste inchange dans son fonctionnement : il lit le
+pipeline sauvegarde, qui contient desormais aussi bien les prospects saisis
+a la main que ceux issus de Discovery — DISCOVER et BRIEFING partagent le
+meme entrepot (`data/prospects.json`), donc le briefing refletera toujours
+la derniere decouverte executee.
+
+### Dans l'interface
+
+La vue **"🔎 Discovery"** (anciennement "Prospection du jour") permet de
+choisir la source (web/mock), le pays/marche, le type de profil et la
+limite, puis affiche les stats de decouverte (requetes, doublons, hors
+cible en pre-qualification) et les stats de priorite (A/B/C/IGNORE), avec
+un bouton **"Voir la fiche"** sur chaque prospect.
+
+### Historique de decouverte
+
+`date_decouverte` (champ V1, inchange) sert de "premiere decouverte" —
+fixee a la creation, jamais ecrasee. Un nouveau champ additif,
+`derniere_decouverte`, est mis a jour a chaque nouvelle decouverte du meme
+prospect, sans jamais effacer l'historique de score/temperature/priorite
+deja enregistre.
+
+### Ajouter une nouvelle source de decouverte
+
+1. Creer `src/discovery/<nom>.js` exportant un objet conforme a
+   `DiscoverySource` (`{ name, discoverProspects(criteria) }`).
+2. Reutiliser `extractCandidate`, `dedupeCandidates` et
+   `preQualifyCandidates` de `src/discovery/web.js` plutot que de dupliquer
+   cette logique, si la source produit des resultats de recherche bruts.
+3. Ajouter le cas dans `getDiscoverySource()`
+   (`src/discovery/index.js`).
+
+Rien d'autre ne change : `runProspectingWorkflow`, l'analyse semantique, le
+scoring, la priorite et le briefing fonctionnent deja pour n'importe quelle
+source conforme a l'interface.
+
 ## Commandes CLI
 
 ### Ajouter un prospect
@@ -289,10 +406,11 @@ du moteur de scoring.
   opportunity/     FIT / INTENTION / OPPORTUNITE, dimensions independantes (V2)
   priority/        Priorite operationnelle A/B/C/IGNORE (V2)
   actions/         Recence, brouillons de commentaire/message (V2)
-  discovery/       Source mock de decouverte de prospects (V2)
+  discovery/       Sources de decouverte interchangeables (V2 mock, V3 web,
+                   instagram/linkedin preparees non implementees)
   briefing/        Generation du briefing quotidien (V2)
   cli.js           Interface en ligne de commande
-/tests       Tests par moteur + scenarios de bout en bout (Tests A a G) + tests API/serveur/extraction/V2
+/tests       Tests par moteur + scenarios de bout en bout (Tests A a G) + tests API/serveur/extraction/V2/V3
 /docs        architecture.md, assumptions.md
 ```
 
@@ -336,16 +454,33 @@ du moteur de scoring.
   `tests/briefing/`) ;
 - le workflow complet de bout en bout (`tests/server/v2_workflow.test.js`) :
   discover -> deduplicate -> analyze -> qualify -> score -> prioritize ->
-  save, y compris l'absence de doublon en relancant le workflow.
+  save, y compris l'absence de doublon en relancant le workflow ;
+- les 14 scenarios de decouverte du cahier des charges V3
+  (`tests/discovery/queries.test.js`, `tests/discovery/web.test.js`,
+  `tests/server/discovery_workflow.test.js`) : generation de requetes
+  depuis la config (jamais codees en dur), recherche mock structuree,
+  extraction de candidats sans invention de nom absent, deduplication
+  (URL/LinkedIn/domaine/nom+entreprise) y compris entre plusieurs requetes,
+  pre-qualification ("inconnu" != "hors cible"), pipeline complet
+  discovery→analyse, priorite, `getDailyProspects` qui ne remplit jamais
+  artificiellement la liste, historique de decouverte (premiere/derniere,
+  jamais ecrase), conservation des sources, integration au briefing, et les
+  sources instagram/linkedin qui levent une erreur explicite (non
+  implementees).
 
 Les tests serveur utilisent un fichier de donnees temporaire
 (`PROSPECTS_FILE`) : ils ne touchent jamais a `data/prospects.json`.
 
-## Ce qui n'est pas fait en V1/V1.1/V2 (par choix)
+## Ce qui n'est pas fait en V1/V1.1/V2/V3 (par choix)
 
 - Aucune automatisation LinkedIn (envoi, scraping, commentaires, connexion
-  directe) : la decouverte V2 utilise une source mock, jamais LinkedIn.
-- Aucune integration CRM / Notion / Google Sheets (prevue pour une V3).
+  directe) : la decouverte V3 utilise une source "web" MOCK (aucun reseau) ;
+  aucun scraping LinkedIn ni Instagram.
+- Instagram et LinkedIn comme sources de decouverte sont preparees
+  (interface `DiscoverySource`) mais non implementees : elles levent une
+  erreur explicite si on tente de les utiliser.
+- Aucune integration CRM / Notion / Google Sheets (prevue pour une V4
+  eventuelle).
 - Aucune IA generative active : l'extraction et l'analyse semantique restent
   a base de regles explicites et auditables ; `analyzeWithAI` est une
   abstraction preparee mais non branchee (mock uniquement, pas de cle API).

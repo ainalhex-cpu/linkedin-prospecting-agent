@@ -100,6 +100,51 @@ function cmdBriefing() {
   console.log(api.getBriefingText(config));
 }
 
+/**
+ * Section 14 du brief V3 : DISCOVER -> ANALYZE -> QUALIFY -> PRIORITIZE ->
+ * SAVE via la source "web" (recherche, aucun scraping) par defaut. Usage :
+ *   node src/cli.js discover [--country France] [--type coach_business] [--limit 10] [--source mock|web]
+ */
+function cmdDiscover(args) {
+  const flags = parseFlags(args);
+  const result = api.runProspectingWorkflow(
+    {
+      source: flags.source || 'web',
+      country: flags.country,
+      market: flags.market,
+      profile_type: flags.type,
+      limit: flags.limit ? parseInt(flags.limit, 10) : 10
+    },
+    config
+  );
+
+  console.log('# DISCOVERY\n');
+  console.log(`Resultats trouves : ${result.stats.trouves}`);
+  console.log(`Doublons : ${result.stats.doublons_recherche}`);
+  console.log(`Hors cible : ${result.stats.hors_cible_decouverte}`);
+  console.log(`Analyses : ${result.stats.analyses}`);
+  console.log(`A : ${result.stats.priorite.A}`);
+  console.log(`B : ${result.stats.priorite.B}`);
+  console.log(`C : ${result.stats.priorite.C}`);
+  console.log(`IGNORE : ${result.stats.priorite.IGNORE}`);
+
+  console.log('\n## TOP PROSPECTS\n');
+  if (result.top.length === 0) {
+    console.log('Aucun prospect pertinent pour le moment.');
+    return;
+  }
+  result.top.forEach((p, i) => {
+    console.log(`${i + 1}. ${p.prenom} ${p.nom}`);
+    console.log(`   Score : ${p.score_total ?? 'N/A'}`);
+    console.log(`   Priorite : ${p.priorite || 'N/A'}`);
+    console.log(`   Besoin : ${p.probleme_principal || 'Non identifie'}`);
+    console.log(`   Offre : ${p.offre_recommandee || 'Non identifiee'}`);
+    console.log(`   Pourquoi maintenant : ${p.opportunity_reason || p.justification_action_v2 || p.justification_action || 'Non identifie'}`);
+    console.log(`   Source : ${(p.sources && p.sources[0]) || 'Non identifiee'}`);
+    console.log('');
+  });
+}
+
 const [, , command, ...args] = process.argv;
 
 switch (command) {
@@ -127,6 +172,9 @@ switch (command) {
   case 'briefing':
     cmdBriefing();
     break;
+  case 'discover':
+    cmdDiscover(args);
+    break;
   default:
     console.log(`Usage:
   node src/cli.js add <fichier.json>
@@ -136,6 +184,8 @@ switch (command) {
   node src/cli.js show <id>
   node src/cli.js serve            (lance l'interface web sur http://localhost:4173)
   node src/cli.js prospect [--country France] [--type coach_business] [--limit 10]
-                                    (workflow V2 : discover -> analyse -> priorite)
-  node src/cli.js briefing          (briefing quotidien V2)`);
+                                    (workflow V2 : source mock -> analyse -> priorite)
+  node src/cli.js discover [--country France] [--type coach_business] [--limit 10] [--source mock|web]
+                                    (workflow V3 : decouverte web (mock, sans reseau) -> analyse -> priorite)
+  node src/cli.js briefing          (briefing quotidien, utilise le dernier pipeline sauvegarde)`);
 }

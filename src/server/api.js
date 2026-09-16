@@ -8,7 +8,7 @@ import { analyzeSemantic } from '../semantic-analysis/index.js';
 import { computeOpportunity } from '../opportunity/index.js';
 import { computePriority } from '../priority/index.js';
 import { computeActionV2, suggestComment, suggestMessage } from '../actions/index.js';
-import { discoverProspects } from '../discovery/index.js';
+import { getDiscoverySource } from '../discovery/index.js';
 import { buildBriefing } from '../briefing/index.js';
 
 /**
@@ -178,6 +178,45 @@ export function analyzeRawText(input, config, filePath) {
 // jamais recalculer ou remplacer le score /100.
 // =====================================================================
 
+/**
+ * Adapte un candidat brut de decouverte (V2 "mock", deja au format attendu,
+ * OU V3 "web" : nom complet, snippet, sources multiples) vers l'entree
+ * attendue par analyzeProspectV2. N'invente rien : un champ absent reste
+ * absent plutot que devine.
+ */
+function normalizeDiscoveryInput(raw, criteria = {}) {
+  // Format V2 (mock) : deja au bon format (prenom/nom separes, texte_brut).
+  if (raw.prenom !== undefined || raw.texte_brut !== undefined) {
+    return raw;
+  }
+
+  // Format V3 (web) : `nom` est le nom complet extrait d'un resultat de
+  // recherche ; on le decoupe en prenom/nom sur le premier espace.
+  const fullName = (raw.nom || '').trim();
+  const spaceIndex = fullName.indexOf(' ');
+  const prenom = spaceIndex === -1 ? fullName : fullName.slice(0, spaceIndex);
+  const nom = spaceIndex === -1 ? '' : fullName.slice(spaceIndex + 1);
+
+  const sources = (raw.sources || []).map(
+    (s) =>
+      `Requete "${s.requete}" — ${s.url || 'source inconnue'} (${s.source || 'web'}, trouve le ${
+        s.date_decouverte ? new Date(s.date_decouverte).toLocaleDateString('fr-FR') : 'date inconnue'
+      })`
+  );
+
+  return {
+    prenom,
+    nom,
+    entreprise: raw.entreprise || undefined,
+    pays: raw.pays || criteria.country || criteria.market || undefined,
+    url_linkedin: raw.url_linkedin || '',
+    texte_brut: raw.snippet || raw.title || '',
+    sources: sources.length ? sources : undefined,
+    premiere_decouverte: raw.premiere_decouverte,
+    derniere_decouverte: raw.derniere_decouverte
+  };
+}
+
 function recordPriorityHistory(previousPriorite, previousHistory, priorite, timestamp, event) {
   const historique_priorite = [...(previousHistory || [])];
   if (previousPriorite !== priorite || historique_priorite.length === 0) {
@@ -254,7 +293,8 @@ export function analyzeProspectV2(input, config, filePath) {
     justification_action_v2: actionV2.reason,
     comment_suggere: suggestComment(v1Prospect),
     message_suggere: suggestMessage(v1Prospect, opportunity),
-    derniere_analyse_v2: now
+    derniere_analyse_v2: now,
+    derniere_decouverte: input.derniere_decouverte || now
   };
 
   upsertProspect(enriched, filePath);
@@ -263,28 +303,75 @@ export function analyzeProspectV2(input, config, filePath) {
 }
 
 /**
- * Workflow section 16 : DISCOVER -> DEDUPLICATE -> ANALYZE -> QUALIFY ->
- * SCORE -> PRIORITIZE -> SAVE. La deduplication est celle deja fournie par
- * addProspect (reutilisee) ; qualify/score restent le moteur V1 inchange.
+ * Workflow section 16 (V2) / section 8+16 (V3) : DISCOVER -> DEDUPLICATE ->
+ * ANALYZE -> QUALIFY -> SCORE -> OPPORTUNITY -> PRIORITIZE -> SAVE.
+ *
+ * `source` choisit la DiscoverySource ('mock' par defaut, retro-compatible
+ * avec la V2 ; 'web' pour la decouverte par recherche, section 4-7 du brief
+ * V3). Le reste du pipeline (analyse semantique, qualification/scoring/
+ * temperature/offer_matching existants, opportunite, priorite) est
+ * strictement identique quelle que soit la source.
  */
-export function runProspectingWorkflow({ country, type, limit = 10 } = {}, config, filePath) {
-  const rawProspects = discoverProspects({ country, type, limit });
-  const stats = { trouves: rawProspects.length, nouveaux: 0, doublons: 0, analyses: 0, HOT: 0, WARM: 0, COLD: 0, IGNORE: 0 };
+export function runProspectingWorkflow(
+  { source = 'mock', country, market, type, profile_type, keywords, limit = 10 } = {},
+  config,
+  filePath
+) {
+  const resolvedType = profile_type || type;
+  const discoverySource = getDiscoverySource(source, config);
+  // `type` (V2, filtre exact sur le mock) et `profile_type` (V3, choisit les
+  // templates de requetes web) sont deux vocabulaires different pour le
+  // meme concept : on transmet les deux pour rester compatible avec
+  // n'importe quelle DiscoverySource.
+  const discoveryResult = discoverySource.discoverProspects({ country, market, type: resolvedType, profile_type: resolvedType, keywords, limit });
+  const rawCandidates = discoveryResult.candidates;
+  const discoveryStats = discoveryResult.stats || {};
+
+  const stats = {
+    source,
+    requetes: discoveryStats.requetes || 0,
+    resultats_bruts: discoveryStats.resultats_bruts ?? rawCandidates.length,
+    doublons_recherche: discoveryStats.doublons || 0,
+    hors_cible_decouverte: discoveryStats.hors_cible || 0,
+    trouves: rawCandidates.length,
+    nouveaux: 0,
+    doublons: 0,
+    analyses: 0,
+    HOT: 0,
+    WARM: 0,
+    COLD: 0,
+    IGNORE: 0,
+    priorite: { A: 0, B: 0, C: 0, IGNORE: 0 }
+  };
   const analyzed = [];
 
-  for (const raw of rawProspects) {
-    const result = analyzeProspectV2(raw, config, filePath);
+  for (const raw of rawCandidates) {
+    const input = normalizeDiscoveryInput(raw, { country, market });
+    const result = analyzeProspectV2(input, config, filePath);
     analyzed.push(result.prospect);
     stats.analyses += 1;
     if (result.isDuplicate) stats.doublons += 1;
     else stats.nouveaux += 1;
     const temp = result.prospect.temperature;
     if (stats[temp] !== undefined) stats[temp] += 1;
+    const prio = result.prospect.priorite;
+    if (prio && stats.priorite[prio] !== undefined) stats.priorite[prio] += 1;
   }
 
-  const top = topProspects(loadProspects(filePath), 10);
+  const top = topProspects(loadProspects(filePath), limit);
 
-  return { stats, prospects: analyzed, top };
+  return { stats, prospects: analyzed, top, eliminated: discoveryResult.eliminated || [] };
+}
+
+/**
+ * Section 13 : recupere, deduplique, analyse, qualifie et priorise, puis
+ * retourne les meilleurs candidats operationnels. Ne remplit JAMAIS
+ * artificiellement la liste : s'il n'y a que 4 prospects pertinents, elle
+ * en retourne 4 (topProspects, reutilise, ne fait deja aucun padding).
+ */
+export function getDailyProspects(limit = 10, options = {}, config, filePath) {
+  const result = runProspectingWorkflow({ ...options, limit }, config, filePath);
+  return result.top.slice(0, limit);
 }
 
 export function getBriefingText(config, filePath) {

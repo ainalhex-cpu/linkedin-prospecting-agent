@@ -23,6 +23,8 @@
       "activite_etablie": [
         { "pattern": "depuis\\s+\\d{4}\\b", "confidence": "high" },
         { "pattern": "depuis\\s+(\\d+|plusieurs)\\s+ans?\\b", "confidence": "high" },
+        { "pattern": "depuis\\s+plus\\s+de\\s+\\d+\\s+ans?\\b", "confidence": "high" },
+        { "pattern": "\\d+\\s+ans\\s+d'(entrepreneuriat|experience)", "confidence": "high" },
         { "pattern": "mes\\s+clients\\s+me\\s+suivent", "confidence": "medium" },
         { "pattern": "\\+\\s?\\d{2,}\\s+(entrepreneurs|dirigeants|clients)\\b", "confidence": "high" },
         { "pattern": "\\d[\\d\\s.,]{3,}\\s+abonnes", "confidence": "high" },

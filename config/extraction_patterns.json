@@ -11,14 +11,15 @@
   "categories": {
     "fit": {
       "coach_business_entrepreneuriat": [
-        { "pattern": "coach\\s+(business|entrepreneur(ial)?|professionnel)", "confidence": "high" },
+        { "pattern": "coachs?\\s+(business|entrepreneur(ial)?s?|professionnels?)", "confidence": "high" },
         { "pattern": "j'accompagne\\s+(les\\s+)?entrepreneurs", "confidence": "high" },
         { "pattern": "j'aide\\s+(les\\s+)?entrepreneurs", "confidence": "medium" },
         { "pattern": "coach\\s+en\\s+entrepreneuriat", "confidence": "high" },
         { "pattern": "j'accompagne\\s+(les\\s+|des\\s+)?dirigeants", "confidence": "high" },
         { "pattern": "j'aide\\s+(les\\s+|des\\s+)?dirigeants", "confidence": "medium" },
         { "pattern": "sparring\\s+partner", "confidence": "high" },
-        { "pattern": "dirigeants?\\s+de\\s+pme", "confidence": "high" }
+        { "pattern": "dirigeants?\\s+de\\s+pme", "confidence": "high" },
+        { "pattern": "profil\\s+de\\s+coach", "confidence": "high" }
       ],
       "activite_etablie": [
         { "pattern": "depuis\\s+\\d{4}\\b", "confidence": "high" },

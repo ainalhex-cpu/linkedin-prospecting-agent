@@ -553,5 +553,117 @@
     ],
     "facilite_contact": null,
     "notes": ""
+  },
+  {
+    "id": "bb370047-4891-4d52-b76a-9b53daf0b0b9",
+    "nom": "Perez Bustamante",
+    "prenom": "Christofer",
+    "entreprise": "Business Ascension",
+    "pays": "France",
+    "url_linkedin": "",
+    "linkedin_id": "",
+    "activite": "Dans 18 mois, la moitie des coachs business auront disparu.",
+    "type_prospect": "Coach business / entrepreneuriat",
+    "audience": "C'est ca, la transformation que je construis avec mes clients.",
+    "niveau_maturite": "Non identifie",
+    "activite_linkedin": "Non identifie",
+    "signaux_observes": [],
+    "problemes_potentiels": [],
+    "faits_observes": [
+      "Dans 18 mois, la moitie des coachs business auront disparu.",
+      "350 personnes accompagnees en transformation profonde depuis 2020.",
+      "C'est ca, la transformation que je construis avec mes clients.",
+      "Pays renseigne : France"
+    ],
+    "hypotheses": [],
+    "sources": [
+      "Texte colle par l'utilisateur (profil/posts LinkedIn)"
+    ],
+    "signals": {
+      "fit": {
+        "coach_business_entrepreneuriat": true,
+        "activite_etablie": true,
+        "marche_francophone": true
+      },
+      "maturite": {
+        "offre_commercialisee": false,
+        "clients_audience_etablis": true,
+        "croissance_visible": false,
+        "delegation_equipe_prestataires": false
+      },
+      "probleme": {
+        "manque_de_temps": false,
+        "communication": false,
+        "organisation": false,
+        "operations": false,
+        "experience_client": false,
+        "besoin_delegation": false
+      },
+      "intention": {
+        "delegation_explicitement_recherchee": false,
+        "recrutement": false,
+        "recherche_aide_prestataire": false,
+        "croissance_importante_lancement": false
+      },
+      "contexte": {
+        "plusieurs_offres": false,
+        "forte_croissance": false,
+        "lancements_reguliers": false,
+        "equipe_ou_prestataires": false,
+        "besoin_coordination": false
+      },
+      "exclusion": {
+        "debutant": false,
+        "aucune_offre": false,
+        "activite_inactive": false,
+        "hors_cible": false,
+        "sans_capacite_delegation": false,
+        "mauvais_marche": false,
+        "profil_trop_eloigne": false,
+        "informations_insuffisantes": false
+      }
+    },
+    "score_fit": 30,
+    "score_maturite": 5,
+    "score_probleme": 0,
+    "score_intention": 0,
+    "score_total": 35,
+    "temperature": "COLD",
+    "offre_recommandee": "NON_IDENTIFIE",
+    "justification": "Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer). Score total 35/100 -> temperature COLD.",
+    "justification_offre": "Aucun signal de probleme suffisant n'a ete observe : offre non identifiee (hypothese a confirmer).",
+    "justification_action": "Score total 35/100 : profil interessant mais encore trop peu mature ou peu de signaux de probleme/intention pour justifier une action immediate.",
+    "action_recommandee": "NURTURE",
+    "prochaine_action": "Observer et laisser murir : revisiter la fiche lors du prochain signal significatif.",
+    "probleme_principal": null,
+    "problemes_secondaires": [],
+    "niveau_confiance": "Eleve (appuye sur des faits observes)",
+    "signaux_intention_detectes": [],
+    "raisons_exclusion": [],
+    "statut_pipeline": "Nouveau",
+    "date_decouverte": "2026-09-16T05:54:35.324Z",
+    "derniere_analyse": "2026-09-16T05:55:20.578Z",
+    "historique_interactions": [],
+    "historique_score": [
+      {
+        "date": "2026-09-16T05:54:35.326Z",
+        "score_total": 20,
+        "evenement": "Analyse initiale via interface"
+      },
+      {
+        "date": "2026-09-16T05:55:20.578Z",
+        "score_total": 35,
+        "evenement": "Mise a jour via interface"
+      }
+    ],
+    "historique_temperature": [
+      {
+        "date": "2026-09-16T05:54:35.326Z",
+        "temperature": "COLD",
+        "evenement": "Analyse initiale via interface"
+      }
+    ],
+    "facilite_contact": null,
+    "notes": ""
   }
 ]

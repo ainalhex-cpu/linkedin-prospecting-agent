@@ -39,6 +39,20 @@ const OFFER_LABELS = {
   NON_IDENTIFIE: 'AUCUNE (non identifiee)'
 };
 
+const PRIORITY_BADGE = {
+  A: '<span class="badge badge-hot">A</span>',
+  B: '<span class="badge badge-warm">B</span>',
+  C: '<span class="badge badge-cold">C</span>',
+  IGNORE: '<span class="badge badge-ignore">IGNORE</span>'
+};
+
+const ICP_LABELS = {
+  ICP_PRINCIPAL: 'ICP principal',
+  ICP_SECONDAIRE: 'ICP secondaire',
+  HORS_ICP: 'Hors ICP',
+  A_VERIFIER: 'A verifier'
+};
+
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -88,6 +102,8 @@ async function router() {
     await ensureConfig();
     if (route === 'nouveau') return renderNouveau();
     if (route === 'extraction') return renderExtraction();
+    if (route === 'prospection') return renderProspection();
+    if (route === 'briefing') return renderBriefing();
     if (route === 'pipeline') return renderPipeline();
     if (route === 'top') return renderTop();
     if (route === 'prospect' && param) return renderFiche(decodeURIComponent(param));
@@ -469,8 +485,9 @@ function renderPipelineTable(prospects, sortBy) {
         <td>${escapeHtml(p.entreprise || '—')}</td>
         <td>${p.score_total ?? '—'}</td>
         <td>${TEMPERATURE_BADGE[p.temperature] || '—'}</td>
+        <td>${p.priorite ? PRIORITY_BADGE[p.priorite] || escapeHtml(p.priorite) : '—'}</td>
         <td>${escapeHtml(OFFER_LABELS[p.offre_recommandee] || p.offre_recommandee || '—')}</td>
-        <td>${ACTION_BADGE[p.action_recommandee] || '—'}</td>
+        <td>${ACTION_BADGE[p.action_recommandee_v2 || p.action_recommandee] || '—'}</td>
         <td>${escapeHtml(p.statut_pipeline || '—')}</td>
         <td>${formatDate(p.derniere_analyse)}</td>
         <td>${escapeHtml(p.prochaine_action || '—')}</td>
@@ -496,7 +513,7 @@ function renderPipelineTable(prospects, sortBy) {
           : `<div style="overflow-x:auto;">
               <table>
                 <thead><tr>
-                  <th>Nom</th><th>Entreprise</th><th>Score</th><th>Temperature</th>
+                  <th>Nom</th><th>Entreprise</th><th>Score</th><th>Temperature</th><th>Priorite</th>
                   <th>Offre</th><th>Action</th><th>Statut</th><th>Derniere analyse</th><th>Prochaine action</th>
                 </tr></thead>
                 <tbody>${rows}</tbody>
@@ -584,6 +601,61 @@ async function renderFiche(id) {
     .map((h) => `<tr><td>${formatDate(h.date)}</td><td>${escapeHtml(h.type || '—')}</td><td>${escapeHtml(h.note || '—')}</td></tr>`)
     .join('');
 
+  const priorityHistoryRows = (p.historique_priorite || [])
+    .slice()
+    .reverse()
+    .map((h) => `<tr><td>${formatDate(h.date)}</td><td>${PRIORITY_BADGE[h.priorite] || escapeHtml(h.priorite)}</td><td>${escapeHtml(h.evenement || '—')}</td></tr>`)
+    .join('');
+
+  const signalsV2Rows = (p.signals_v2 || [])
+    .map(
+      (s) => `<tr>
+        <td>${escapeHtml(s.name)}</td>
+        <td>"${escapeHtml(s.evidence)}"</td>
+        <td>${escapeHtml(s.confidence || '—')}</td>
+        <td>${escapeHtml(s.context || '—')}</td>
+      </tr>`
+    )
+    .join('');
+
+  const v2Section = p.icp_assessment
+    ? `
+    <div class="card">
+      <div class="result-header"><h2>Signals (V2) — pourquoi cette priorite ?</h2>${p.priorite ? PRIORITY_BADGE[p.priorite] || '' : ''}</div>
+      <div class="grid-2">
+        <div class="kv"><div class="k">Qualification ICP</div><div class="v">${escapeHtml(ICP_LABELS[p.icp_assessment.qualification] || p.icp_assessment.qualification)}</div></div>
+        <div class="kv"><div class="k">Statut professionnel</div><div class="v">${escapeHtml(p.statut_professionnel || 'inconnu')}</div></div>
+        <div class="kv"><div class="k">Activite propre</div><div class="v">${escapeHtml(p.activite_propre || 'NON_DEMONTREE')}</div></div>
+        <div class="kv"><div class="k">Offre commercialisee</div><div class="v">${escapeHtml(p.offre_commercialisee_v2 || 'NON_IDENTIFIEE')}</div></div>
+        <div class="kv"><div class="k">Niveau d'intention</div><div class="v">${escapeHtml(p.intention_level || 'NO')}</div></div>
+        <div class="kv"><div class="k">Niveau d'opportunite</div><div class="v">${escapeHtml(p.opportunity_level || 'FAIBLE')}</div></div>
+      </div>
+      <div class="kv"><div class="k">Pourquoi cette qualification ICP ?</div><div class="v">${escapeHtml(p.icp_assessment.reason || '')}</div></div>
+      ${p.opportunity_reason ? `<div class="kv"><div class="k">Pourquoi ce niveau d'opportunite ?</div><div class="v">${escapeHtml(p.opportunity_reason)}</div></div>` : ''}
+      ${
+        p.action_recommandee_v2 && p.action_recommandee_v2 !== p.action_recommandee
+          ? `<div class="callout">Action ajustee par la couche V2 (recence/opportunite) : ${ACTION_BADGE[p.action_recommandee_v2] || escapeHtml(p.action_recommandee_v2)}<br/>${escapeHtml(p.justification_action_v2 || '')}</div>`
+          : ''
+      }
+      ${
+        signalsV2Rows
+          ? `<div class="section-title" style="margin-top:14px;">Signaux detailles (nom / preuve / confiance / contexte)</div>
+             <div style="overflow-x:auto;"><table><thead><tr><th>Signal</th><th>Preuve</th><th>Confiance</th><th>Contexte</th></tr></thead><tbody>${signalsV2Rows}</tbody></table></div>`
+          : ''
+      }
+      ${
+        p.comment_suggere
+          ? `<div class="kv" style="margin-top:10px;"><div class="k">Brouillon de commentaire (a valider)</div><div class="v">${escapeHtml(p.comment_suggere.brouillon)}</div></div>`
+          : ''
+      }
+      ${
+        p.message_suggere
+          ? `<div class="kv"><div class="k">Brouillon de message (a valider — opportunite forte)</div><div class="v">${escapeHtml(p.message_suggere.brouillon)}<br/><em>${escapeHtml(p.message_suggere.pourquoi_maintenant)}</em></div></div>`
+          : ''
+      }
+    </div>`
+    : '';
+
   app.innerHTML = `
     <a href="#/pipeline" class="back-link">← Retour au pipeline</a>
     <h1>${escapeHtml(p.prenom)} ${escapeHtml(p.nom)}</h1>
@@ -606,6 +678,8 @@ async function renderFiche(id) {
     </div>
 
     ${p.derniere_analyse ? renderResultCard(p) : `<div class="card"><div class="empty-state">Ce prospect n'a pas encore ete analyse.</div></div>`}
+
+    ${v2Section}
 
     <div class="card">
       <h2>Relancer l'analyse</h2>
@@ -643,6 +717,19 @@ async function renderFiche(id) {
           : `<div class="empty-state">Aucune interaction enregistree (V1 : saisie manuelle a venir).</div>`
       }
     </div>
+
+    ${
+      p.icp_assessment
+        ? `<div class="card">
+            <h2>Historique de priorite</h2>
+            ${
+              priorityHistoryRows
+                ? `<table><thead><tr><th>Date</th><th>Priorite</th><th>Evenement</th></tr></thead><tbody>${priorityHistoryRows}</tbody></table>`
+                : `<div class="empty-state">Aucun historique pour le moment.</div>`
+            }
+          </div>`
+        : ''
+    }
   `;
 
   document.getElementById('reanalyze-form').addEventListener('submit', async (e) => {
@@ -659,4 +746,108 @@ async function renderFiche(id) {
       statusEl.className = 'status-msg error';
     }
   });
+}
+
+// ---------- Vue : Prospection du jour (V2 - workflow discover -> analyse -> priorite) ----------
+
+function renderProspection() {
+  app.innerHTML = `
+    <h1>📅 Prospection du jour</h1>
+    <p class="page-subtitle">
+      Lance le workflow V2 (source mock pour l'instant, aucune connexion LinkedIn) :
+      decouverte → deduplication → analyse semantique → qualification/scoring existants →
+      priorite. Le moteur de scoring reste inchange ; cette vue n'ajoute que la decouverte
+      et la priorisation.
+    </p>
+
+    <div class="card">
+      <h2>Analyser les nouveaux prospects</h2>
+      <form id="prospection-form" class="grid-2">
+        <div class="field"><label>Pays (optionnel)</label><input type="text" name="country" placeholder="France, Belgique..." /></div>
+        <div class="field"><label>Limite</label><input type="text" name="limit" value="10" /></div>
+      </form>
+      <button id="prospection-run" class="btn">🔎 Analyser les nouveaux prospects</button>
+      <span id="prospection-status" class="status-msg"></span>
+    </div>
+
+    <div id="prospection-result"></div>
+  `;
+
+  document.getElementById('prospection-run').addEventListener('click', async () => {
+    const form = document.getElementById('prospection-form');
+    const formData = new FormData(form);
+    const statusEl = document.getElementById('prospection-status');
+    statusEl.textContent = 'Analyse en cours...';
+    statusEl.className = 'status-msg';
+
+    try {
+      const result = await apiPost('/api/prospecting/run', {
+        country: formData.get('country')?.trim() || undefined,
+        limit: parseInt(formData.get('limit'), 10) || 10
+      });
+      statusEl.textContent = `${result.stats.trouves} prospect(s) trouve(s), ${result.stats.nouveaux} nouveau(x), ${result.stats.doublons} doublon(s) mis a jour.`;
+      statusEl.className = 'status-msg ok';
+      renderProspectionResult(result);
+    } catch (err) {
+      statusEl.textContent = `Erreur : ${err.message}`;
+      statusEl.className = 'status-msg error';
+    }
+  });
+}
+
+function renderProspectionResult(result) {
+  const rows = result.prospects
+    .map(
+      (p) => `
+      <tr data-id="${escapeHtml(p.id)}">
+        <td>${escapeHtml(p.prenom)} ${escapeHtml(p.nom)}</td>
+        <td>${p.priorite ? PRIORITY_BADGE[p.priorite] || escapeHtml(p.priorite) : '—'}</td>
+        <td>${TEMPERATURE_BADGE[p.temperature] || '—'}</td>
+        <td>${escapeHtml(p.probleme_principal || '—')}</td>
+        <td>${escapeHtml(OFFER_LABELS[p.offre_recommandee] || p.offre_recommandee || '—')}</td>
+        <td>${ACTION_BADGE[p.action_recommandee_v2 || p.action_recommandee] || '—'}</td>
+      </tr>`
+    )
+    .join('');
+
+  document.getElementById('prospection-result').innerHTML = `
+    <div class="card">
+      <h2>Stats du run</h2>
+      <div class="score-grid">
+        <div class="score-tile"><div class="label">HOT</div><div class="value">${result.stats.HOT}</div></div>
+        <div class="score-tile"><div class="label">WARM</div><div class="value">${result.stats.WARM}</div></div>
+        <div class="score-tile"><div class="label">COLD</div><div class="value">${result.stats.COLD}</div></div>
+        <div class="score-tile"><div class="label">IGNORE</div><div class="value">${result.stats.IGNORE}</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Nouveaux prospects analyses</h2>
+      ${
+        rows
+          ? `<div style="overflow-x:auto;"><table><thead><tr><th>Nom</th><th>Priorite</th><th>Temperature</th><th>Besoin</th><th>Offre</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`
+          : `<div class="empty-state">Aucun prospect.</div>`
+      }
+    </div>
+  `;
+
+  document.querySelectorAll('#prospection-result tbody tr').forEach((tr) => {
+    tr.addEventListener('click', () => {
+      window.location.hash = `#/prospect/${encodeURIComponent(tr.dataset.id)}`;
+    });
+  });
+}
+
+// ---------- Vue : Briefing (V2) ----------
+
+async function renderBriefing() {
+  app.innerHTML = `<h1>🗞️ Briefing</h1><p class="page-subtitle">Chargement...</p>`;
+  const { briefing } = await apiGet('/api/briefing');
+
+  app.innerHTML = `
+    <h1>🗞️ Briefing</h1>
+    <p class="page-subtitle">Vue synthetique du jour, basee sur la priorite operationnelle (pas seulement le score).</p>
+    <div class="card">
+      <pre style="white-space: pre-wrap; font-family: inherit; font-size: 13.5px; margin: 0;">${escapeHtml(briefing)}</pre>
+    </div>
+  `;
 }

@@ -12,22 +12,24 @@
  * linguistique, pas une decision de score.
  */
 
-const CONFIDENCE_PRIORITY = { high: 3, medium: 2, low: 1 };
+export const CONFIDENCE_PRIORITY = { high: 3, medium: 2, low: 1 };
 
-function stripDiacritics(str) {
+export function stripDiacritics(str) {
   return str.normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
-function normalizeForMatch(str) {
+export function normalizeForMatch(str) {
   return stripDiacritics(str).toLowerCase();
 }
 
 /**
  * Decoupe le texte en phrases/lignes exploitables comme "preuve". On garde
  * le texte original (accents, casse) pour l'affichage, et on matche sur une
- * version normalisee en parallele.
+ * version normalisee en parallele. Exporte pour reutilisation par
+ * src/semantic-analysis (V2), qui a besoin des memes phrases pour son
+ * propre post-traitement (statut professionnel, activite propre, contexte).
  */
-function splitSentences(text) {
+export function splitSentences(text) {
   const lines = String(text || '').split(/\r?\n/);
   const sentences = [];
   for (const line of lines) {
@@ -56,7 +58,7 @@ function isConfidenceApplied(category, confidence, patternsConfig) {
   return CONFIDENCE_PRIORITY[confidence] >= CONFIDENCE_PRIORITY[minConfidence];
 }
 
-function dedupe(list) {
+export function dedupe(list) {
   return [...new Set(list.filter(Boolean))];
 }
 

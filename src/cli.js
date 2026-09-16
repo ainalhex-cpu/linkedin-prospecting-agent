@@ -58,6 +58,48 @@ async function cmdServe() {
   });
 }
 
+function parseFlags(args) {
+  const flags = {};
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i].startsWith('--')) {
+      flags[args[i].slice(2)] = args[i + 1];
+      i += 1;
+    }
+  }
+  return flags;
+}
+
+/**
+ * Workflow section 16 : DISCOVER -> DEDUPLICATE -> ANALYZE -> QUALIFY ->
+ * SCORE -> PRIORITIZE -> SAVE. Usage :
+ *   node src/cli.js prospect [--country France] [--type coach_business] [--limit 10]
+ */
+function cmdProspect(args) {
+  const flags = parseFlags(args);
+  const result = api.runProspectingWorkflow(
+    { country: flags.country, type: flags.type, limit: flags.limit ? parseInt(flags.limit, 10) : 10 },
+    config
+  );
+
+  console.log('=== Workflow de prospection ===');
+  console.log(`Prospects trouves     : ${result.stats.trouves}`);
+  console.log(`Nouveaux              : ${result.stats.nouveaux}`);
+  console.log(`Doublons mis a jour   : ${result.stats.doublons}`);
+  console.log(`Analyses              : ${result.stats.analyses}`);
+  console.log(`  HOT   : ${result.stats.HOT}`);
+  console.log(`  WARM  : ${result.stats.WARM}`);
+  console.log(`  COLD  : ${result.stats.COLD}`);
+  console.log(`  IGNORE: ${result.stats.IGNORE}`);
+  console.log('\n=== Top priorites ===');
+  result.top.forEach((p, i) => {
+    console.log(`${i + 1}. ${p.prenom} ${p.nom} - score=${p.score_total} temp=${p.temperature} priorite=${p.priorite || 'N/A'} offre=${p.offre_recommandee}`);
+  });
+}
+
+function cmdBriefing() {
+  console.log(api.getBriefingText(config));
+}
+
 const [, , command, ...args] = process.argv;
 
 switch (command) {
@@ -79,6 +121,12 @@ switch (command) {
   case 'serve':
     cmdServe();
     break;
+  case 'prospect':
+    cmdProspect(args);
+    break;
+  case 'briefing':
+    cmdBriefing();
+    break;
   default:
     console.log(`Usage:
   node src/cli.js add <fichier.json>
@@ -86,5 +134,8 @@ switch (command) {
   node src/cli.js list
   node src/cli.js top [n]
   node src/cli.js show <id>
-  node src/cli.js serve            (lance l'interface web sur http://localhost:4173)`);
+  node src/cli.js serve            (lance l'interface web sur http://localhost:4173)
+  node src/cli.js prospect [--country France] [--type coach_business] [--limit 10]
+                                    (workflow V2 : discover -> analyse -> priorite)
+  node src/cli.js briefing          (briefing quotidien V2)`);
 }

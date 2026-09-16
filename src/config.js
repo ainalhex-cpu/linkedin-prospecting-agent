@@ -18,6 +18,8 @@ export function loadConfig() {
     signals: loadJson('signals.json'),
     thresholds: loadJson('thresholds.json'),
     pipeline: loadJson('pipeline.json'),
-    extraction: loadJson('extraction_patterns.json')
+    extraction: loadJson('extraction_patterns.json'),
+    statut: loadJson('statut_patterns.json'),
+    intentLevels: loadJson('intent_levels.json')
   };
 }

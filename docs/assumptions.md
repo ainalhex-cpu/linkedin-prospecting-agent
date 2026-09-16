@@ -144,3 +144,82 @@ modifiables via `/config` sans toucher au code.
     confiance, FAIBLE sinon (y compris quand rien n'est detecte). C'est une
     indication qualitative pour l'utilisateur, pas une note qui entre dans
     le score /100.
+
+## V2 — decouverte, analyse semantique, opportunite, priorite, briefing
+
+17. **Un quatrieme statut ICP, `A_VERIFIER`, en plus des trois du brief
+    (ICP_PRINCIPAL / ICP_SECONDAIRE / HORS_ICP).** Le brief V2 (section 11)
+    ne nomme que trois categories, mais son propre principe directeur
+    ("ne jamais inventer") s'applique aussi a la qualification ICP : quand
+    aucune preuve suffisante n'existe (ni activite propre confirmee, ni
+    statut salarie detecte), le systeme ne doit pas plus inventer un
+    HORS_ICP (l'absence de preuve n'est pas la preuve du contraire) qu'un
+    ICP_PRINCIPAL. `A_VERIFIER` comble ce cas, exactement comme le brief le
+    demande deja pour le contexte d'un signal ("Contexte non determine",
+    section 5). Consequence directe sur le pont vers le scoring V1 : un
+    profil `A_VERIFIER` NE recoit PAS le bonus FIT "coach business"
+    (uniquement PRINCIPAL/SECONDAIRE), et sa priorite plafonne a B (jamais
+    A, meme avec une opportunite forte) — voir `src/priority/index.js`.
+
+18. **Statut salarie = disqualifiant absolu, y compris pour un excellent
+    vocabulaire "coach".** Conformement a la section 6/11 du brief V2, des
+    qu'un statut salarie est detecte (ex: "chez AFTRAL", "en alternance",
+    "poste salarie"), `icp_assessment.qualification` vaut HORS_ICP quel que
+    soit le reste du texte, ce qui active `signals.exclusion.hors_cible`
+    (champ V1 deja existant mais jamais cable avant la V2) et produit une
+    temperature IGNORE via le moteur existant, sans nouvelle logique
+    d'exclusion.
+
+19. **Detection du statut salarie : marqueurs explicites uniquement, jamais
+    par defaut.** Un profil sans aucun marqueur de statut (ni salarie, ni
+    independant/fondateur/dirigeant) reste `statut: 'inconnu'`, ce qui ne
+    bloque PAS une qualification ICP_PRINCIPAL/SECONDAIRE si une activite
+    propre est par ailleurs demontree (ex: "j'ai lance mon entreprise" sans
+    le mot "fondateur"). Etre exhaustif sur la detection de statut est moins
+    important qu'eviter un faux "salarie" qui exclurait a tort un
+    independant qui ne l'a pas explicitement precise.
+
+20. **Le garde-fou "probleme du prospect vs. probleme de ses clients"
+    s'applique aux categories PROBLEME et INTENTION, jamais a MATURITE.**
+    "Mes clients ont une organisation chaotique" ne doit jamais devenir le
+    probleme du prospect (retire du scoring, section 9), mais reste une
+    preuve legitime qu'il A des clients (`maturite.clients_audience_etablis`
+    n'est pas concernee par le garde-fou) : l'existence de clients et la
+    nature de leurs problemes sont deux faits independants.
+
+21. **Priorite A_VERIFIER + opportunite forte -> priorite B, jamais A.** Le
+    brief ne donne que 3 exemples de priorite (section 12). Choix : un
+    signal d'intention fort sans FIT confirme merite un coup d'oeil humain
+    (B) plutot que d'etre enterre (C) ou traite comme un exclu (IGNORE,
+    reserve au HORS_ICP confirme), mais ne peut jamais atteindre A sans un
+    ICP confirme — la priorite A est reservee a un FIT ET une opportunite
+    tous deux etablis.
+
+22. **Seuil de recence : 60 jours, configurable
+    (`config/intent_levels.json -> recency_threshold_days`), et neutre par
+    defaut.** Le brief (section 14) ne fixe pas de duree. Choisi comme
+    ordre de grandeur raisonnable pour un signal de type "je cherche un
+    prestataire" reste actionnable. Sans date de signal fournie (cas de
+    tous les textes colles a la main aujourd'hui, qui n'ont pas de date de
+    publication structuree), l'action du moteur existant n'est JAMAIS
+    penalisee : la recence ne peut que retrograder une action, jamais en
+    inventer une meilleure ni en degrader une par defaut faute de date.
+
+23. **Une seule date de signal par texte analyse, pas par phrase.** Le
+    brief (section 14) demande que chaque signal puisse avoir une date. En
+    l'absence de dates par phrase dans un texte colle a la main (LinkedIn
+    n'expose pas cette metadonnee a la copie), la V2 accepte une date
+    optionnelle unique (`date_publication`) appliquee a l'ensemble des
+    preuves d'un meme texte. Suffisant pour le cas d'usage actuel (analyser
+    un post ou un profil a un instant donne) ; une source structuree future
+    (section 15/23 de la V2, ou une API autorisee) pourrait dater chaque
+    signal individuellement sans changer `src/actions/computeActionV2`.
+
+24. **Discovery V2 : jeu de donnees mock fixe en memoire, pas de fichier de
+    configuration separe.** Le brief demande explicitement une source MOCK
+    pour cette V2 (section 15), pas une vraie recherche. Les quelques
+    profils types (coach etabli avec/sans intention, formateur independant/
+    salarie, salarie qui recrute, debutant) couvrent directement les
+    scenarios de test requis (section 23) et servent de demonstration du
+    workflow complet. Remplacer cette source par une API autorisee plus
+    tard ne touche que `src/discovery/index.js`.

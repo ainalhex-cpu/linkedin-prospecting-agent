@@ -1,0 +1,45 @@
+{
+  "description": "Taxonomie d'intention (section 10 du brief V2) : classe chaque signal existant (config/signals.json) sur une echelle HIGH/MEDIUM/LOW/NO, independamment du score FIT/MATURITE/PROBLEME/INTENTION du moteur existant. Utilisee par src/opportunity pour calculer intention_level et opportunity_level. Ne modifie jamais le scoring existant (src/scoring), qui reste la source de verite pour le score /100.",
+
+  "base_levels": {
+    "intention.recherche_aide_prestataire": "HIGH",
+    "intention.delegation_explicitement_recherchee": "HIGH",
+    "intention.recrutement": "MEDIUM",
+    "intention.croissance_importante_lancement": "MEDIUM",
+    "probleme.besoin_delegation": "MEDIUM",
+    "probleme.manque_de_temps": "LOW",
+    "probleme.organisation": "LOW",
+    "probleme.operations": "LOW",
+    "probleme.communication": "LOW",
+    "probleme.experience_client": "LOW",
+    "contexte.besoin_coordination": "LOW",
+    "maturite.croissance_visible": "LOW"
+  },
+
+  "context_overrides": {
+    "intention.recrutement": {
+      "salarie_interne": "NO",
+      "freelance_prestataire": "HIGH",
+      "associe": "MEDIUM",
+      "non_determine": "MEDIUM"
+    },
+    "intention.recherche_aide_prestataire": {
+      "salarie_interne": "NO",
+      "freelance_prestataire": "HIGH",
+      "associe": "MEDIUM",
+      "non_determine": "HIGH"
+    }
+  },
+
+  "default_level": "NO",
+
+  "recency_threshold_days": 60,
+
+  "opportunity_matrix": {
+    "description": "opportunity_level = f(icp_qualification, intention_level_max). ICP_PRINCIPAL/SECONDAIRE uniquement : un HORS_ICP est toujours FAIBLE, quelle que soit l'intention (section 4 : le fit doit etre reel pour qu'une intention devienne une opportunite commerciale).",
+    "ICP_PRINCIPAL": { "HIGH": "FORTE", "MEDIUM": "MOYENNE", "LOW": "FAIBLE", "NO": "FAIBLE" },
+    "ICP_SECONDAIRE": { "HIGH": "MOYENNE", "MEDIUM": "MOYENNE", "LOW": "FAIBLE", "NO": "FAIBLE" },
+    "HORS_ICP": { "HIGH": "FAIBLE", "MEDIUM": "FAIBLE", "LOW": "FAIBLE", "NO": "FAIBLE" },
+    "A_VERIFIER": { "HIGH": "MOYENNE", "MEDIUM": "FAIBLE", "LOW": "FAIBLE", "NO": "FAIBLE" }
+  }
+}

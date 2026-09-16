@@ -1,0 +1,102 @@
+{
+  "description": "Regles (regex, meme mecanisme que config/extraction_patterns.json) utilisees par src/semantic-analysis pour determiner, a partir d'un texte, le statut professionnel du prospect, s'il demontre une activite propre, l'etat de son offre commerciale, et le contexte d'un signal ambigu (ex: 'je recrute' = poste salarie interne, prestataire freelance, ou associe). Rien n'est invente : chaque valeur retenue doit etre appuyee par une preuve litterale ; en absence de preuve suffisante, la valeur reste 'NON_DEMONTREE'/'NON_IDENTIFIEE'/'non_determine'.",
+
+  "statut_professionnel": {
+    "fondateur": [
+      { "pattern": "fondateur|fondatrice|founder|co-fondateur|co-fondatrice", "confidence": "high" }
+    ],
+    "dirigeant": [
+      { "pattern": "dirigeant(e)?\\s+d'entreprise|gerant(e)?\\s+d'entreprise|\\bceo\\b|directeur\\s+general|directrice\\s+generale", "confidence": "high" }
+    ],
+    "coach_independant": [
+      { "pattern": "coach\\s+independant(e)?|coach\\s+a\\s+mon\\s+compte", "confidence": "high" },
+      { "pattern": "coach\\s+(business\\s+)?independant(e)?", "confidence": "high" }
+    ],
+    "formateur_independant": [
+      { "pattern": "formateur\\s+independant|formatrice\\s+independante|formateur\\s+a\\s+mon\\s+compte", "confidence": "high" }
+    ],
+    "consultant_independant": [
+      { "pattern": "consultant(e)?\\s+independant(e)?", "confidence": "high" }
+    ],
+    "independant": [
+      { "pattern": "independant(e)?\\s+depuis|a\\s+mon\\s+compte|en\\s+freelance\\s+depuis|entrepreneur(e)?\\s+depuis", "confidence": "medium" }
+    ],
+    "salarie": [
+      { "pattern": "salarie(e)?\\s+(chez|au\\s+sein)|en\\s+poste\\s+chez|j'ai\\s+rejoint\\s+(le|la|l')|alternance|alternant(e)?|stagiaire|en\\s+cdi\\s+chez|en\\s+cdd\\s+chez", "confidence": "medium" },
+      { "pattern": "poste\\s+salarie|\\bcdi\\b|\\bcdd\\b", "confidence": "medium" },
+      { "pattern": "(formateur|formatrice|consultant(e)?|coach|responsable)\\s+chez\\s+[a-z]", "confidence": "medium" }
+    ],
+    "responsable_operationnel_salarie": [
+      { "pattern": "responsable\\s+(des\\s+)?operations|operations\\s+manager|pole\\s+ops", "confidence": "medium" }
+    ]
+  },
+
+  "activite_propre": {
+    "confirmee": [
+      { "pattern": "mon\\s+entreprise", "confidence": "high" },
+      { "pattern": "ma\\s+propre\\s+(entreprise|activite|structure|societe)", "confidence": "high" },
+      { "pattern": "mon\\s+offre", "confidence": "high" },
+      { "pattern": "mes\\s+clients\\s+personnels", "confidence": "high" },
+      { "pattern": "j'ai\\s+lance\\s+(mon|ma)", "confidence": "high" },
+      { "pattern": "temoignages?\\s+de\\s+mes\\s+clients", "confidence": "medium" },
+      { "pattern": "mon\\s+site\\s+(professionnel|internet)?", "confidence": "medium" },
+      { "pattern": "depuis\\s+que\\s+j'ai\\s+lance\\s+mon\\s+activite", "confidence": "high" },
+      { "pattern": "mon\\s+programme|mon\\s+accompagnement", "confidence": "high" },
+      { "pattern": "mes\\s+clients\\s+(ont|ont\\s+deja|generent|temoignent|me\\s+recommandent)", "confidence": "medium" }
+    ],
+    "non_demontree_markers": [
+      { "pattern": "chez\\s+[a-z0-9]", "confidence": "medium" },
+      { "pattern": "au\\s+sein\\s+de\\s+l'equipe", "confidence": "medium" },
+      { "pattern": "poste\\s+(salarie|en\\s+cdi|en\\s+cdd|en\\s+alternance)", "confidence": "medium" }
+    ]
+  },
+
+  "offre_commercialisee_v2": {
+    "confirmee": [
+      { "pattern": "mon\\s+programme|(un\\s+)?programme\\s+d'accompagnement", "confidence": "high" },
+      { "pattern": "mon\\s+accompagnement", "confidence": "high" },
+      { "pattern": "ma\\s+formation", "confidence": "high" },
+      { "pattern": "j'ai\\s+lance\\s+(mon|une)\\s+(programme|offre|formation)", "confidence": "high" },
+      { "pattern": "accompagnement\\s+sur\\s+\\d+\\s*mois|programme\\s+sur\\s+\\d+\\s*mois", "confidence": "high" }
+    ],
+    "probable": [
+      { "pattern": "je\\s+propose\\s+(un|une)\\s+(programme|accompagnement|formation)", "confidence": "medium" },
+      { "pattern": "diagnostic\\s+offert|audit\\s+offert", "confidence": "medium" },
+      { "pattern": "reservez\\s+(votre\\s+)?appel|prenez\\s+rendez-vous", "confidence": "low" }
+    ]
+  },
+
+  "profil_type": {
+    "description": "Distingue l'auto-identification 'coach business/entrepreneurial' (ICP principal) de 'formateur/expert/consultant' (ICP secondaire), independamment du statut salarie/independant (verifie separement).",
+    "secondaire": [
+      { "pattern": "formateur\\s+independant|formatrice\\s+independante", "confidence": "high" },
+      { "pattern": "j'accompagne\\s+(les\\s+)?formateurs", "confidence": "high" },
+      { "pattern": "j'aide\\s+(les\\s+)?formateurs", "confidence": "medium" },
+      { "pattern": "consultant(e)?\\s+independant(e)?", "confidence": "high" },
+      { "pattern": "expert(e)?\\s+en\\s+accompagnement", "confidence": "medium" }
+    ]
+  },
+
+  "contexte_signal": {
+    "salarie_interne": [
+      { "pattern": "alternance|alternant(e)?|stage|stagiaire|\\bcdi\\b|\\bcdd\\b|conversion\\s+cdi|poste\\s+salarie", "confidence": "high" }
+    ],
+    "freelance_prestataire": [
+      { "pattern": "freelance|prestataire|externe|bras\\s+droit\\s+externe|independant(e)?", "confidence": "high" }
+    ],
+    "associe": [
+      { "pattern": "associe(e)?|co-fondateur|co-fondatrice|partenaire\\s+business", "confidence": "high" }
+    ]
+  },
+
+  "client_pain_guard": [
+    "mes\\s+clients?\\b",
+    "tes\\s+clients?\\b",
+    "mes\\s+patient(e)?s\\b",
+    "les\\s+agents\\s+(commerciaux\\s+)?(que\\s+)?j'accompagne",
+    "les\\s+entrepreneurs\\s+que\\s+j'accompagne"
+  ],
+  "client_pain_guard_exceptions": [
+    "suivi\\s+(de\\s+mes\\s+)?client"
+  ]
+}

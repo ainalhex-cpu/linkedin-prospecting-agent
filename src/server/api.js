@@ -4,6 +4,12 @@ import { findDuplicate } from '../deduplication/index.js';
 import { analyzeProspect, formatOutput } from '../analysis/index.js';
 import { topProspects } from '../pipeline/index.js';
 import { extractFromText } from '../extraction/index.js';
+import { analyzeSemantic } from '../semantic-analysis/index.js';
+import { computeOpportunity } from '../opportunity/index.js';
+import { computePriority } from '../priority/index.js';
+import { computeActionV2, suggestComment, suggestMessage } from '../actions/index.js';
+import { discoverProspects } from '../discovery/index.js';
+import { buildBriefing } from '../briefing/index.js';
 
 /**
  * Couche de service partagee entre la CLI et le serveur HTTP. Elle ne
@@ -161,4 +167,127 @@ export function analyzeRawText(input, config, filePath) {
       texte_brut: texteBrut
     }
   };
+}
+
+// =====================================================================
+// V2 : analyse semantique, opportunite, priorite, decouverte, briefing.
+// Le moteur existant (qualification/scoring/temperature/offer_matching,
+// appele via addAndAnalyze plus haut) reste la source de verite pour le
+// score et la temperature : les fonctions ci-dessous n'ajoutent que des
+// champs supplementaires (icp_assessment, priorite, action V2...) sans
+// jamais recalculer ou remplacer le score /100.
+// =====================================================================
+
+function recordPriorityHistory(previousPriorite, previousHistory, priorite, timestamp, event) {
+  const historique_priorite = [...(previousHistory || [])];
+  if (previousPriorite !== priorite || historique_priorite.length === 0) {
+    historique_priorite.push({
+      date: timestamp,
+      priorite,
+      evenement: event || (historique_priorite.length === 0 ? 'Analyse initiale' : 'Changement de priorite')
+    });
+  }
+  return historique_priorite;
+}
+
+/**
+ * Point d'entree V2 : texte brut -> analyse semantique (statut, activite
+ * propre, contexte, garde-fous) -> moteur existant (qualification/scoring/
+ * temperature/offre/action, INCHANGE) -> opportunite/priorite/action V2.
+ */
+export function analyzeProspectV2(input, config, filePath) {
+  const texteBrut = input.texte_brut || '';
+  const semantic = analyzeSemantic({ text: texteBrut, pays: input.pays }, config);
+
+  const prospectInput = {
+    prenom: input.prenom,
+    nom: input.nom,
+    entreprise: input.entreprise,
+    pays: input.pays,
+    url_linkedin: input.url_linkedin,
+    type_prospect: input.type_prospect || semantic.champs_deduits.type_prospect || undefined,
+    activite: input.activite || semantic.champs_deduits.activite || undefined,
+    offre: input.offre || semantic.champs_deduits.offre || undefined,
+    audience: input.audience || semantic.champs_deduits.audience || undefined,
+    faits_observes: semantic.facts,
+    hypotheses: semantic.hypotheses,
+    sources: input.sources && input.sources.length ? input.sources : ['Texte colle (V2 - analyse semantique)'],
+    signals: semantic.v1_signals
+  };
+
+  const { prospect, isDuplicate, matchedOn } = addProspect(prospectInput, filePath);
+  const event = input.event || (isDuplicate ? 'Mise a jour via workflow V2' : 'Analyse initiale via workflow V2');
+  const analyzed = analyzeExisting(prospect.id, config, event, filePath);
+  const v1Prospect = analyzed.prospect;
+
+  const opportunity = computeOpportunity(semantic, config);
+  const priorite = computePriority({
+    icpQualification: semantic.icp_assessment.qualification,
+    opportunityLevel: opportunity.opportunity_level,
+    temperature: v1Prospect.temperature
+  });
+  const actionV2 = computeActionV2(
+    {
+      v1Action: v1Prospect.action_recommandee,
+      icpQualification: semantic.icp_assessment.qualification,
+      signalDate: input.date_publication || null
+    },
+    config
+  );
+
+  const now = new Date().toISOString();
+  const historique_priorite = recordPriorityHistory(v1Prospect.priorite, v1Prospect.historique_priorite, priorite, now, event);
+
+  const enriched = {
+    ...v1Prospect,
+    icp_assessment: semantic.icp_assessment,
+    statut_professionnel: semantic.context.statut_professionnel,
+    activite_propre: semantic.context.activite_propre,
+    offre_commercialisee_v2: semantic.context.offre_commercialisee,
+    signals_v2: semantic.signals,
+    intention_level: opportunity.intention_level,
+    opportunity_level: opportunity.opportunity_level,
+    opportunity_reason: opportunity.reason,
+    priorite,
+    historique_priorite,
+    action_recommandee_v2: actionV2.action,
+    justification_action_v2: actionV2.reason,
+    comment_suggere: suggestComment(v1Prospect),
+    message_suggere: suggestMessage(v1Prospect, opportunity),
+    derniere_analyse_v2: now
+  };
+
+  upsertProspect(enriched, filePath);
+
+  return { prospect: enriched, isDuplicate, matchedOn, semantic, opportunity };
+}
+
+/**
+ * Workflow section 16 : DISCOVER -> DEDUPLICATE -> ANALYZE -> QUALIFY ->
+ * SCORE -> PRIORITIZE -> SAVE. La deduplication est celle deja fournie par
+ * addProspect (reutilisee) ; qualify/score restent le moteur V1 inchange.
+ */
+export function runProspectingWorkflow({ country, type, limit = 10 } = {}, config, filePath) {
+  const rawProspects = discoverProspects({ country, type, limit });
+  const stats = { trouves: rawProspects.length, nouveaux: 0, doublons: 0, analyses: 0, HOT: 0, WARM: 0, COLD: 0, IGNORE: 0 };
+  const analyzed = [];
+
+  for (const raw of rawProspects) {
+    const result = analyzeProspectV2(raw, config, filePath);
+    analyzed.push(result.prospect);
+    stats.analyses += 1;
+    if (result.isDuplicate) stats.doublons += 1;
+    else stats.nouveaux += 1;
+    const temp = result.prospect.temperature;
+    if (stats[temp] !== undefined) stats[temp] += 1;
+  }
+
+  const top = topProspects(loadProspects(filePath), 10);
+
+  return { stats, prospects: analyzed, top };
+}
+
+export function getBriefingText(config, filePath) {
+  const prospects = loadProspects(filePath);
+  return buildBriefing(prospects, {});
 }

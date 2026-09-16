@@ -152,10 +152,93 @@ demandera de changer que la fonction qui produit `{ text, pays }` en entree
 de `extractFromText` — le moteur d'extraction et le moteur de scoring restent
 inchanges.
 
-## Ce qui n'est PAS construit en V1 / V1.1 (volontairement)
+## V2 : decouverte, analyse semantique, opportunite, priorite, briefing
 
-- Aucune connexion a LinkedIn (scraping, automatisation, API).
-- Aucune integration CRM / Notion / Sheets (prevu pour V2, voir section 23).
-- Aucune IA generative (LLM, API externe) pour l'extraction de signaux : le
-  moteur d'extraction est a base de regles explicites et modifiables
-  (`config/extraction_patterns.json`), pas un modele de langage.
+La V2 ajoute des modules AUTOUR du moteur V1 (qualification/scoring/
+temperature/offer_matching), sans jamais le modifier :
+
+```
+discovery (mock) -> semantic-analysis -> [qualification/scoring/temperature/
+                                           offer_matching EXISTANTS, inchanges]
+                                                    |
+                                                    v
+                                    opportunity -> priority -> actions (V2)
+                                                    |
+                                                    v
+                                       pipeline (existant) + briefing
+```
+
+**`src/semantic-analysis/index.js`** est le seul point ou la V2 "touche" au
+moteur V1 : sa fonction `analyzeSemantic()` appelle `extractFromText()`
+(V1.1, inchangee) puis construit un jeu de signaux V1 plus juste
+(`v1_signals`) avant de le transmettre tel quel a `analyzeProspect()` (V1,
+inchangee). Elle ne recalcule jamais un score : elle decide seulement quelles
+preuves ont le droit d'atteindre le moteur de scoring existant. Trois
+mecanismes de gating :
+
+1. **Statut professionnel + activite propre gatent le FIT "coach business/
+   entrepreneuriat"** (15 pts). Ce critere n'est mis a `true` que si
+   `icp_assessment.qualification` vaut `ICP_PRINCIPAL` ou `ICP_SECONDAIRE`
+   (statut non-salarie ET activite propre demontree par une preuve
+   litterale — jamais un simple titre de poste). Un statut salarie force
+   `signals.exclusion.hors_cible = true`, qui declenche l'exclusion V1
+   existante (temperature IGNORE) sans qu'aucune nouvelle logique
+   d'exclusion n'ait ete ecrite : le champ `hors_cible` existait deja dans
+   le schema V1 mais n'avait jamais ete active avant la V2.
+2. **Garde-fou "probleme du prospect vs probleme de ses clients"** : toute
+   preuve dont la phrase contient un marqueur du type "mes clients"/"mes
+   patientes" (config/statut_patterns.json -> `client_pain_guard`) est
+   retiree des signaux `probleme`/`intention` transmis au scoring, sauf
+   exception explicite (`suivi de mes clients` reste une charge reelle DU
+   prospect). Le signal ecarte devient une hypothese tracee plutot que de
+   disparaitre silencieusement.
+3. **Contexte d'un signal ambigu** ("je recrute", "je cherche de l'aide") :
+   determine via `config/statut_patterns.json -> contexte_signal`
+   (salarie_interne / freelance_prestataire / associe / non_determine).
+   Un recrutement en contexte salarie_interne est retire des signaux
+   `intention` transmis au scoring (ce n'est pas une opportunite pour
+   Dina), meme si le mot-cle brut avait matche en V1.1.
+
+**`src/opportunity/index.js`** classe l'intention maximale retenue
+(HIGH/MEDIUM/LOW/NO, `config/intent_levels.json`) puis la croise avec
+`icp_assessment.qualification` (matrice `opportunity_matrix`) pour produire
+`opportunity_level` (FORTE/MOYENNE/FAIBLE). Un HORS_ICP reste toujours
+FAIBLE : le fit doit etre reel pour qu'une intention devienne une
+opportunite commerciale (section 4 du brief V2).
+
+**`src/priority/index.js`** est une fonction pure (pas de config) qui
+traduit `{icp_qualification, opportunity_level, temperature}` en A/B/C/
+IGNORE — une priorite OPERATIONNELLE, distincte du score et de la
+temperature (section 12).
+
+**`src/actions/index.js`** ajuste (jamais n'invente) l'action du moteur
+existant selon la recence du signal declencheur (`config/intent_levels.json
+-> recency_threshold_days`, 60 jours par defaut) : un signal trop ancien
+retrograde CONVERSATION -> WARM_UP -> NURTURE, jamais l'inverse. Sans date
+de signal fournie, l'action V1 n'est jamais penalisee (comportement neutre
+par defaut). Ce module prepare aussi des brouillons de commentaire/message
+(jamais envoyes), uniquement quand l'opportunite est FORTE.
+
+**`src/discovery/index.js`** est une source MOCK (aucun reseau) derriere une
+interface stable (`discoverProspects({country, type, limit})`) : brancher
+une source autorisee plus tard ne changera que ce module.
+
+**`src/briefing/index.js`** formate le pipeline existant (avec les champs V2)
+en briefing quotidien groupe par priorite.
+
+Voir `docs/assumptions.md` pour le detail des choix de conception (le
+bucket `A_VERIFIER`, la matrice de priorite, le seuil de recence, etc.).
+
+## Ce qui n'est PAS construit en V1 / V1.1 / V2 (volontairement)
+
+- Aucune connexion a LinkedIn (scraping, automatisation, API) : la
+  decouverte V2 est une source mock en memoire.
+- Aucune integration CRM / Notion / Sheets (prevu pour une V3 eventuelle).
+- Aucune IA generative (LLM, API externe) active : le moteur d'extraction et
+  la couche semantique sont a base de regles explicites et modifiables
+  (`config/extraction_patterns.json`, `config/statut_patterns.json`), pas un
+  modele de langage. `src/semantic-analysis/ai.js` prepare une abstraction
+  (`analyzeWithAI`) pour une future implementation reelle, mais reste en
+  mode mock : aucun appel reseau, aucune cle API dans le depot.
+- Aucune automatisation d'action sociale : les brouillons de commentaire/
+  message sont generes mais jamais envoyes automatiquement.

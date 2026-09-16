@@ -101,6 +101,20 @@ export function createServer({ config = loadConfig() } = {}) {
         return sendJson(res, 200, api.analyzeRawText(body, config));
       }
 
+      if (pathname === '/api/analyze-v2' && req.method === 'POST') {
+        const body = await readBody(req);
+        return sendJson(res, 200, api.analyzeProspectV2(body, config));
+      }
+
+      if (pathname === '/api/prospecting/run' && req.method === 'POST') {
+        const body = await readBody(req);
+        return sendJson(res, 200, api.runProspectingWorkflow(body, config));
+      }
+
+      if (pathname === '/api/briefing' && req.method === 'GET') {
+        return sendJson(res, 200, { briefing: api.getBriefingText(config) });
+      }
+
       if (pathname === '/api/top' && req.method === 'GET') {
         const n = parseInt(url.searchParams.get('n') || '10', 10);
         return sendJson(res, 200, api.topProspectsList(Number.isFinite(n) ? n : 10));

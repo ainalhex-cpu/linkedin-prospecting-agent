@@ -119,6 +119,24 @@ export function createProspect(input = {}) {
     historique_score: input.historique_score || [],
     historique_temperature: input.historique_temperature || [],
     facilite_contact: input.facilite_contact ?? null,
-    notes: input.notes || ''
+    notes: input.notes || '',
+
+    // V2 - analyse semantique / opportunite / priorite (src/semantic-analysis,
+    // src/opportunity, src/priority). Additifs : ne remplacent aucun champ V1.
+    icp_assessment: input.icp_assessment || null,
+    statut_professionnel: input.statut_professionnel || 'inconnu',
+    activite_propre: input.activite_propre || 'NON_DEMONTREE',
+    offre_commercialisee_v2: input.offre_commercialisee_v2 || 'NON_IDENTIFIEE',
+    signals_v2: input.signals_v2 || [],
+    intention_level: input.intention_level || null,
+    opportunity_level: input.opportunity_level || null,
+    opportunity_reason: input.opportunity_reason || null,
+    priorite: input.priorite || null,
+    historique_priorite: input.historique_priorite || [],
+    action_recommandee_v2: input.action_recommandee_v2 || null,
+    justification_action_v2: input.justification_action_v2 || null,
+    comment_suggere: input.comment_suggere || null,
+    message_suggere: input.message_suggere || null,
+    derniere_analyse_v2: input.derniere_analyse_v2 || null
   };
 }

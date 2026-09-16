@@ -81,6 +81,99 @@ n'a ete dupliquee ou modifiee pour la construire. Les donnees restent dans
 toujours rien sur LinkedIn : c'est un outil de saisie et de decision, pas
 un robot.
 
+## V2 — Prospection assistee (decouverte, analyse semantique, priorite, briefing)
+
+La V2 fait passer le systeme de *"je colle un profil, le systeme analyse"* a
+*"le systeme decouvre/analyse/qualifie/priorise des prospects et me presente
+les actions a faire"* — sans jamais automatiser d'action sociale (pas de
+connexion LinkedIn, pas de scraping, pas d'envoi automatique).
+
+**Le moteur existant (V1) reste la source de verite pour le score et la
+temperature.** La V2 ajoute des couches AUTOUR de lui, jamais a la place :
+
+```
+SOURCE (mock)  ->  DISCOVERY  ->  SEMANTIC ANALYSIS  ->  QUALIFICATION/SCORING
+(src/discovery)   (src/semantic-analysis)             EXISTANTS (inchanges)
+                                                              |
+                                                              v
+                                          OPPORTUNITY  ->  PRIORITY  ->  ACTION V2
+                                        (src/opportunity)  (src/priority) (src/actions)
+                                                              |
+                                                              v
+                                                       PIPELINE (existant) + BRIEFING
+```
+
+- **`src/semantic-analysis/`** enrichit l'extraction V1.1 (regex, gardee
+  comme "couche complementaire") avec une comprehension de CONTEXTE :
+  statut professionnel (fondateur/dirigeant/independant/salarie/...),
+  activite propre demontree ou non (jamais un simple titre de poste), etat
+  de l'offre (CONFIRMEE/PROBABLE/NON_IDENTIFIEE), et un garde-fou essentiel
+  : un probleme mentionne pour "mes clients" n'est jamais attribue au
+  prospect lui-meme. Elle determine aussi le contexte d'un signal ambigu
+  ("je recrute" = salarie interne, freelance/prestataire, associe, ou non
+  determine) — sans jamais inventer quand ce n'est pas clair.
+- **FIT, INTENTION et OPPORTUNITE sont trois dimensions independantes**
+  (`src/opportunity/`) : un excellent FIT sans intention reste une
+  opportunite faible (nurture) ; une intention forte chez un profil hors
+  ICP reste une opportunite faible aussi (le fit doit etre reel).
+- **La qualification ICP est revue** : ICP_PRINCIPAL (coach business/
+  entrepreneuriat independant avec activite propre), ICP_SECONDAIRE
+  (formateur/expert/consultant independant, activite propre + offre
+  confirmees), HORS_ICP (salarie, debutant sans activite reelle...), ou
+  A_VERIFIER (jamais invente quand l'information manque). Le pont vers le
+  scoring existant (`config/scoring.json`, inchange) n'accorde le critere
+  FIT "coach business/entrepreneuriat" (15 pts) que si l'ICP est confirme
+  avec une activite propre demontree — jamais sur un mot-cle isole.
+- **Priorite operationnelle** (`src/priority/`) : A/B/C/IGNORE, distincte du
+  score. Un excellent FIT sans intention (ex: coach etabli qui ne cherche
+  rien) reste priorite B — interessant, mais pas urgent.
+- **Recence des signaux** (`src/actions/`) : un signal d'intention trop
+  ancien retrograde l'action d'un cran (CONVERSATION -> WARM_UP -> NURTURE),
+  sans jamais modifier le score ni l'historique existant.
+- **Brouillons de commentaire/message** (jamais envoyes automatiquement,
+  toujours a valider par l'utilisateur), proposes seulement quand
+  l'opportunite est reellement forte.
+- **`src/discovery/`** : source MOCK uniquement pour cette V2 (aucune
+  connexion LinkedIn). `discoverProspects({ country, type, limit })` renvoie
+  des prospects bruts ; l'architecture permet de brancher plus tard une
+  source autorisee sans changer le reste du pipeline.
+- **`src/briefing/`** : genere le briefing quotidien, groupe par priorite.
+
+### Lancer le workflow
+
+```bash
+npm run prospect                                 # decouvre, analyse et priorise (mock, France par defaut = tout)
+node src/cli.js prospect --country France --type coach_business --limit 10
+```
+
+Affiche : prospects trouves, nouveaux, doublons, analyses par temperature
+(HOT/WARM/COLD/IGNORE), et le top des priorites.
+
+### Lancer le briefing
+
+```bash
+npm run briefing
+```
+
+Genere le texte du briefing du jour (🔥 a regarder en priorite, 🟠 a
+rechauffer, 🔵 a surveiller, ❌ ignores + raisons).
+
+### Dans l'interface
+
+Deux nouvelles vues : **"📅 Prospection du jour"** (bouton "Analyser les
+nouveaux prospects", avec filtres pays/limite) et **"🗞️ Briefing"**. La
+fiche prospect affiche desormais un bloc **"Signals (V2)"** qui explique la
+qualification ICP, le statut professionnel, l'activite propre, le niveau
+d'intention/opportunite, et le detail signal/preuve/confiance/contexte
+utilise — pour toujours voir *pourquoi* un prospect a telle priorite.
+
+### Abstraction IA (preparee, non activee)
+
+`src/semantic-analysis/ai.js` expose `analyzeWithAI(text)`, une abstraction
+pour brancher plus tard un modele de langage. Aujourd'hui : implementation
+MOCK uniquement, aucun appel reseau, aucune cle API dans le depot. Utiliser
+un vrai provider est une decision explicite a prendre plus tard.
+
 ## Commandes CLI
 
 ### Ajouter un prospect
@@ -192,8 +285,14 @@ du moteur de scoring.
   store/           Persistance JSON
   server/          api.js (couche de service partagee CLI/web) + server.js (HTTP natif)
   extraction/      Extraction de signaux a partir d'un texte brut colle (V1.1)
+  semantic-analysis/  Statut pro, activite propre, contexte, garde-fous (V2)
+  opportunity/     FIT / INTENTION / OPPORTUNITE, dimensions independantes (V2)
+  priority/        Priorite operationnelle A/B/C/IGNORE (V2)
+  actions/         Recence, brouillons de commentaire/message (V2)
+  discovery/       Source mock de decouverte de prospects (V2)
+  briefing/        Generation du briefing quotidien (V2)
   cli.js           Interface en ligne de commande
-/tests       Tests par moteur + scenarios de bout en bout (Tests A a G) + tests API/serveur/extraction
+/tests       Tests par moteur + scenarios de bout en bout (Tests A a G) + tests API/serveur/extraction/V2
 /docs        architecture.md, assumptions.md
 ```
 
@@ -220,16 +319,37 @@ du moteur de scoring.
   (`tests/server/analyze_text.test.js`), qui verifient que le texte colle
   produit exactement les memes decisions (score, temperature, offre) que le
   moteur existant, y compris un test explicite qui compare le resultat
-  "texte" et le resultat "formulaire manuel" sur les memes signaux.
+  "texte" et le resultat "formulaire manuel" sur les memes signaux ;
+- les tests de la couche semantique V2 (`tests/semantic-analysis/`) : les
+  17 scenarios du cahier des charges V2 (coach independant etabli, coach
+  sans intention, besoin explicite, formateur independant vs salarie,
+  salarie qui recrute, contexte de recrutement, recherche de freelance,
+  garde-fou "probleme du prospect vs de ses clients" — avec l'exception
+  "suivi de mes clients" —, contexte ambigu, activite propre confirmee/non
+  demontree) ;
+- les tests d'opportunite et de priorite (`tests/opportunity/`,
+  `tests/priority/`) : FIT/INTENTION/OPPORTUNITE independants, matrice de
+  priorite A/B/C/IGNORE ;
+- les tests de recence (`tests/actions/`) : signal ancien retrograde
+  l'action, signal recent la conserve, aucune penalite sans date fournie ;
+- les tests de decouverte et de briefing (`tests/discovery/`,
+  `tests/briefing/`) ;
+- le workflow complet de bout en bout (`tests/server/v2_workflow.test.js`) :
+  discover -> deduplicate -> analyze -> qualify -> score -> prioritize ->
+  save, y compris l'absence de doublon en relancant le workflow.
 
 Les tests serveur utilisent un fichier de donnees temporaire
 (`PROSPECTS_FILE`) : ils ne touchent jamais a `data/prospects.json`.
 
-## Ce qui n'est pas fait en V1 (par choix)
+## Ce qui n'est pas fait en V1/V1.1/V2 (par choix)
 
-- Aucune automatisation LinkedIn (envoi, scraping, commentaires).
-- Aucune integration CRM / Notion / Google Sheets (prevue pour la V2).
-- Aucune extraction automatique de signaux depuis un texte brut par IA : les
-  signaux sont saisis explicitement pour rester audités et fiables.
+- Aucune automatisation LinkedIn (envoi, scraping, commentaires, connexion
+  directe) : la decouverte V2 utilise une source mock, jamais LinkedIn.
+- Aucune integration CRM / Notion / Google Sheets (prevue pour une V3).
+- Aucune IA generative active : l'extraction et l'analyse semantique restent
+  a base de regles explicites et auditables ; `analyzeWithAI` est une
+  abstraction preparee mais non branchee (mock uniquement, pas de cle API).
 - Pas de gestion multi-utilisateur ni d'authentification (outil local,
   usage personnel).
+- Pas d'envoi automatique de commentaire ou de message : seuls des
+  brouillons sont proposes, toujours valides par l'utilisateur.

@@ -119,8 +119,9 @@
         { "pattern": "rejoindre\\s+mon\\s+equipe", "confidence": "medium" }
       ],
       "recherche_aide_prestataire": [
-        { "pattern": "je\\s+cherche\\s+(une\\s+personne|quelqu'un|un\\s+prestataire|une\\s+aide)", "confidence": "high" },
+        { "pattern": "je\\s+cherche\\s+(une\\s+personne|quelqu'un|un\\s+prestataire|une\\s+aide|un\\s+freelance)", "confidence": "high" },
         { "pattern": "a\\s+la\\s+recherche\\s+d'(un|une)\\s+(assistant|freelance|prestataire)", "confidence": "high" },
+        { "pattern": "bras\\s+droit\\s+(externe|freelance)", "confidence": "high" },
         { "pattern": "pour\\s+m'aider\\s+(a|dans)", "confidence": "medium" }
       ],
       "croissance_importante_lancement": [
